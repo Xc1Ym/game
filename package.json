@@ -1,0 +1,11 @@
+{
+  "name": "fruit-link-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A dependency-free fruit-themed tile matching game.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test",
+    "assets:crop": "node scripts/crop-atlas.mjs"
+  }
+}
