@@ -35,7 +35,10 @@ body::after {
 body::before { top: 8%; left: 4%; transform: rotate(-18deg); }
 body::after { right: 4%; bottom: 4%; transform: rotate(14deg); }
 
-button { font: inherit; }
+button {
+  font: inherit;
+  touch-action: manipulation;
+}
 
 .app-shell {
   width: min(100% - 32px, 880px);
@@ -259,6 +262,9 @@ h1 {
   gap: clamp(3px, 0.75vw, 7px);
   width: 100%;
   aspect-ratio: calc(var(--columns) / var(--rows));
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .tile {
