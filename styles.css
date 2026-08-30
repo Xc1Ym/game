@@ -387,6 +387,11 @@ h1 {
 }
 
 .combo-badge.show { animation: comboPop 1.1s ease forwards; }
+.combo-badge.penalty {
+  background: linear-gradient(135deg, #ed7564, #cf4e46);
+  border-color: #fff1eb;
+  box-shadow: 0 6px 18px rgba(147, 53, 45, 0.3);
+}
 .board-wrap.auto-shuffled .tile:not(.removed) { animation: shuffleDance 0.5s ease; }
 
 .action-row { display: flex; justify-content: center; gap: 12px; margin-top: 17px; }
