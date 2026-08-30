@@ -193,7 +193,8 @@
 
   function showCombo() {
     if (state.combo < 2) return;
-    elements.comboBadge.textContent = `${state.combo} 连击  +${state.combo * 5}`;
+    const comboBonus = (state.combo - 1) * 5;
+    elements.comboBadge.textContent = `${state.combo} 连击  加成 +${comboBonus}`;
     elements.comboBadge.classList.remove("show");
     void elements.comboBadge.offsetWidth;
     elements.comboBadge.classList.add("show");
