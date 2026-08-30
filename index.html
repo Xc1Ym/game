@@ -25,9 +25,15 @@
           <button class="difficulty" type="button" data-level="normal">进阶</button>
           <button class="difficulty" type="button" data-level="hard">挑战</button>
         </div>
-        <button class="new-game" id="newGameButton" type="button">
-          <span aria-hidden="true">↻</span> 新游戏
-        </button>
+        <div class="control-actions">
+          <label class="player-field">
+            <span>玩家</span>
+            <input id="playerName" type="text" value="玩家1" maxlength="12" autocomplete="nickname" aria-label="当前玩家名称" />
+          </label>
+          <button class="new-game" id="newGameButton" type="button">
+            <span aria-hidden="true">↻</span> 新游戏
+          </button>
+        </div>
       </section>
 
       <section class="game-card">
@@ -64,6 +70,10 @@
             <span class="action-icon" aria-hidden="true">⤨</span>
             <span>洗牌 <b id="shuffleCount">3</b></span>
           </button>
+          <button class="action-button leaderboard" id="leaderboardButton" type="button">
+            <span class="action-icon" aria-hidden="true">★</span>
+            <span>本机排行</span>
+          </button>
         </div>
       </section>
 
@@ -78,6 +88,25 @@
         <p id="resultMessage">你成功清空了果园。</p>
         <div class="result-score"><span>本局得分</span><strong id="finalScore">0</strong></div>
         <button class="new-game result-button" id="playAgainButton" type="button">再玩一局</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="leaderboardModal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+      <div class="ranking-card">
+        <button class="modal-close" id="closeLeaderboardButton" type="button" aria-label="关闭排行榜">×</button>
+        <p class="eyebrow">LOCAL RECORDS</p>
+        <h2 id="leaderboardTitle">本机最快排行</h2>
+        <p class="ranking-note">每位玩家保留最佳成绩，数据仅存于当前浏览器</p>
+        <div class="ranking-tabs" role="group" aria-label="排行榜难度">
+          <button class="ranking-tab active" type="button" data-ranking-level="easy">悠闲</button>
+          <button class="ranking-tab" type="button" data-ranking-level="normal">进阶</button>
+          <button class="ranking-tab" type="button" data-ranking-level="hard">挑战</button>
+        </div>
+        <div class="ranking-header" aria-hidden="true">
+          <span>名次</span><span>玩家</span><span>用时</span><span>得分</span>
+        </div>
+        <div class="ranking-list" id="rankingList" role="list"></div>
+        <button class="new-game ranking-close-button" id="rankingDoneButton" type="button">关闭</button>
       </div>
     </div>
 

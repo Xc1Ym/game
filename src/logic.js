@@ -162,7 +162,45 @@
     );
   }
 
-  const api = { createBoard, findPath, findAvailablePair, shuffleRemaining, countRemaining, shuffled };
+  function updateRanking(records, entry, limit = 10) {
+    const playerKey = entry.name.trim().toLocaleLowerCase("zh-CN");
+    const normalizedEntry = { ...entry, name: entry.name.trim() };
+    const existing = records.find(
+      (record) => record.name.trim().toLocaleLowerCase("zh-CN") === playerKey,
+    );
+    const isBetter = !existing
+      || normalizedEntry.elapsed < existing.elapsed
+      || (normalizedEntry.elapsed === existing.elapsed && normalizedEntry.score > existing.score);
+    const candidate = isBetter ? normalizedEntry : existing;
+    const updated = records.filter(
+      (record) => record.name.trim().toLocaleLowerCase("zh-CN") !== playerKey,
+    );
+    updated.push(candidate);
+    updated.sort((first, second) =>
+      first.elapsed - second.elapsed
+      || second.score - first.score
+      || first.completedAt - second.completedAt,
+    );
+    const limited = updated.slice(0, limit);
+    const rankIndex = limited.findIndex(
+      (record) => record.name.trim().toLocaleLowerCase("zh-CN") === playerKey,
+    );
+    return {
+      records: limited,
+      rank: rankIndex >= 0 ? rankIndex + 1 : null,
+      isPersonalBest: isBetter,
+    };
+  }
+
+  const api = {
+    createBoard,
+    findPath,
+    findAvailablePair,
+    shuffleRemaining,
+    countRemaining,
+    shuffled,
+    updateRanking,
+  };
   globalScope.FruitLinkLogic = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

@@ -1,7 +1,14 @@
 (function startFruitLink() {
   "use strict";
 
-  const { createBoard, findPath, findAvailablePair, shuffleRemaining, countRemaining } = window.FruitLinkLogic;
+  const {
+    createBoard,
+    findPath,
+    findAvailablePair,
+    shuffleRemaining,
+    countRemaining,
+    updateRanking,
+  } = window.FruitLinkLogic;
   const FRUITS = [
     "apple", "orange", "lemon", "pear", "peach", "cherries", "strawberry", "blueberries",
     "kiwi", "watermelon", "grapes", "pineapple", "mango", "banana", "coconut", "avocado",
@@ -38,6 +45,10 @@
     normal: { rows: 8, cols: 10, types: 16, time: 300, hints: 2, shuffles: 1, label: "进阶" },
     hard: { rows: 10, cols: 12, types: 24, time: 360, hints: 1, shuffles: 1, label: "挑战" },
   };
+  const STORAGE_KEYS = {
+    leaderboard: "fruitLinkLeaderboardV1",
+    playerName: "fruitLinkPlayerNameV1",
+  };
 
   const elements = {
     board: document.querySelector("#board"),
@@ -61,6 +72,12 @@
     resultMessage: document.querySelector("#resultMessage"),
     finalScore: document.querySelector("#finalScore"),
     playAgainButton: document.querySelector("#playAgainButton"),
+    playerName: document.querySelector("#playerName"),
+    leaderboardButton: document.querySelector("#leaderboardButton"),
+    leaderboardModal: document.querySelector("#leaderboardModal"),
+    rankingList: document.querySelector("#rankingList"),
+    closeLeaderboardButton: document.querySelector("#closeLeaderboardButton"),
+    rankingDoneButton: document.querySelector("#rankingDoneButton"),
   };
 
   const state = {
@@ -77,11 +94,116 @@
     locked: false,
     sound: true,
     audioContext: null,
+    rankingLevel: "easy",
   };
 
   function formatTime(seconds) {
     const safe = Math.max(0, seconds);
     return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
+  }
+
+  function emptyLeaderboard() {
+    return { easy: [], normal: [], hard: [] };
+  }
+
+  function loadLeaderboard() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.leaderboard) || "null");
+      if (!parsed || typeof parsed !== "object") return emptyLeaderboard();
+      return Object.fromEntries(Object.keys(LEVELS).map((level) => [
+        level,
+        Array.isArray(parsed[level]) ? parsed[level].filter((record) =>
+          record
+          && typeof record.name === "string"
+          && Number.isFinite(record.elapsed)
+          && Number.isFinite(record.score)
+          && Number.isFinite(record.completedAt),
+        ) : [],
+      ]));
+    } catch {
+      return emptyLeaderboard();
+    }
+  }
+
+  function persistLeaderboard(leaderboard) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.leaderboard, JSON.stringify(leaderboard));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function currentPlayerName() {
+    const name = elements.playerName.value.trim().slice(0, 12) || "匿名玩家";
+    elements.playerName.value = name;
+    try {
+      localStorage.setItem(STORAGE_KEYS.playerName, name);
+    } catch {
+      // The game remains playable when browser storage is unavailable.
+    }
+    return name;
+  }
+
+  function rememberPlayerName() {
+    try {
+      localStorage.setItem(STORAGE_KEYS.playerName, elements.playerName.value.slice(0, 12));
+    } catch {
+      // The game remains playable when browser storage is unavailable.
+    }
+  }
+
+  function recordWin() {
+    const leaderboard = loadLeaderboard();
+    const config = LEVELS[state.level];
+    const result = updateRanking(leaderboard[state.level], {
+      name: currentPlayerName(),
+      elapsed: config.time - state.remainingTime,
+      score: state.score,
+      completedAt: Date.now(),
+    });
+    leaderboard[state.level] = result.records;
+    return persistLeaderboard(leaderboard) ? result : null;
+  }
+
+  function renderLeaderboard() {
+    const leaderboard = loadLeaderboard();
+    const records = leaderboard[state.rankingLevel];
+    document.querySelectorAll(".ranking-tab").forEach((button) => {
+      button.classList.toggle("active", button.dataset.rankingLevel === state.rankingLevel);
+    });
+    elements.rankingList.innerHTML = "";
+    if (!records.length) {
+      const empty = document.createElement("p");
+      empty.className = "ranking-empty";
+      empty.textContent = "还没有通关纪录，等你来占据第一名！";
+      elements.rankingList.appendChild(empty);
+      return;
+    }
+    records.forEach((record, index) => {
+      const row = document.createElement("div");
+      row.className = `ranking-row${index < 3 ? ` top-${index + 1}` : ""}`;
+      row.setAttribute("role", "listitem");
+      [String(index + 1), record.name, formatTime(record.elapsed), record.score.toLocaleString("zh-CN")]
+        .forEach((value) => {
+          const cell = document.createElement("span");
+          cell.textContent = value;
+          row.appendChild(cell);
+        });
+      elements.rankingList.appendChild(row);
+    });
+  }
+
+  function openLeaderboard() {
+    state.rankingLevel = state.level;
+    renderLeaderboard();
+    elements.leaderboardModal.classList.remove("hidden");
+    elements.closeLeaderboardButton.focus();
+  }
+
+  function closeLeaderboard() {
+    elements.leaderboardModal.classList.add("hidden");
+    elements.leaderboardButton.focus();
   }
 
   function playTone(frequency, duration = 0.08, delay = 0) {
@@ -274,7 +396,10 @@
     }
     state.hints -= 1;
     state.selected = null;
-    elements.board.querySelectorAll(".selected").forEach((tile) => tile.classList.remove("selected"));
+    elements.board.querySelectorAll(".selected").forEach((tile) => {
+      tile.classList.remove("selected");
+      tile.setAttribute("aria-selected", "false");
+    });
     const tiles = [tileAt(pair.first), tileAt(pair.second)];
     tiles.forEach((tile) => tile?.classList.add("hinted"));
     showPath(pair.path);
@@ -301,12 +426,18 @@
     state.timer = null;
     state.locked = true;
     if (won) {
+      const config = LEVELS[state.level];
+      const elapsed = config.time - state.remainingTime;
       const timeBonus = state.remainingTime * 2;
       state.score += timeBonus;
+      const ranking = recordWin();
+      const rankingText = ranking
+        ? `${ranking.isPersonalBest ? "刷新个人最佳" : "保留个人最佳"}${ranking.rank ? `，本机第 ${ranking.rank} 名` : "，暂未进入前 10"}`
+        : "浏览器未允许保存本机成绩";
       elements.resultFruit.textContent = "🏆";
       elements.resultEyebrow.textContent = "丰收时刻";
       elements.resultTitle.textContent = "果园大丰收！";
-      elements.resultMessage.textContent = `清空棋盘，另获 ${timeBonus} 分时间奖励。`;
+      elements.resultMessage.textContent = `用时 ${formatTime(elapsed)}，${rankingText}。另获 ${timeBonus} 分时间奖励。`;
       playTone(523, 0.14);
       playTone(659, 0.14, 0.13);
       playTone(784, 0.24, 0.26);
@@ -360,6 +491,25 @@
   elements.shuffleButton.addEventListener("click", shuffleBoard);
   elements.newGameButton.addEventListener("click", newGame);
   elements.playAgainButton.addEventListener("click", newGame);
+  elements.leaderboardButton.addEventListener("click", openLeaderboard);
+  elements.closeLeaderboardButton.addEventListener("click", closeLeaderboard);
+  elements.rankingDoneButton.addEventListener("click", closeLeaderboard);
+  elements.leaderboardModal.addEventListener("click", (event) => {
+    if (event.target === elements.leaderboardModal) closeLeaderboard();
+  });
+  document.querySelectorAll(".ranking-tab").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.rankingLevel = button.dataset.rankingLevel;
+      renderLeaderboard();
+    });
+  });
+  elements.playerName.addEventListener("input", rememberPlayerName);
+  elements.playerName.addEventListener("blur", currentPlayerName);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !elements.leaderboardModal.classList.contains("hidden")) {
+      closeLeaderboard();
+    }
+  });
   elements.soundButton.addEventListener("click", () => {
     state.sound = !state.sound;
     elements.soundButton.classList.toggle("muted", !state.sound);
@@ -372,5 +522,10 @@
     elements.pathLayer.innerHTML = "";
   });
 
+  try {
+    elements.playerName.value = localStorage.getItem(STORAGE_KEYS.playerName) || "玩家1";
+  } catch {
+    elements.playerName.value = "玩家1";
+  }
   newGame();
 })();

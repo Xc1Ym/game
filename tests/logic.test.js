@@ -6,6 +6,7 @@ const {
   findAvailablePair,
   shuffleRemaining,
   countRemaining,
+  updateRanking,
 } = require("../src/logic.js");
 
 test("createBoard produces pairs and the requested dimensions", () => {
@@ -60,4 +61,27 @@ test("shuffleRemaining preserves empty cells and tile counts", () => {
   assert.equal(shuffled[1][1], null);
   assert.deepEqual(shuffled.flat().filter(Boolean).sort(), ["A", "A", "B", "B"]);
   assert.equal(countRemaining(shuffled), 4);
+});
+
+test("updateRanking sorts by fastest time and uses score as the tie breaker", () => {
+  const result = updateRanking([
+    { name: "小林", elapsed: 80, score: 900, completedAt: 1 },
+    { name: "阿明", elapsed: 70, score: 800, completedAt: 2 },
+  ], { name: "小雨", elapsed: 70, score: 950, completedAt: 3 });
+
+  assert.deepEqual(result.records.map((record) => record.name), ["小雨", "阿明", "小林"]);
+  assert.equal(result.rank, 1);
+  assert.equal(result.isPersonalBest, true);
+});
+
+test("updateRanking keeps only a player's best result", () => {
+  const records = [{ name: "Alice", elapsed: 60, score: 700, completedAt: 1 }];
+  const slower = updateRanking(records, { name: "alice", elapsed: 75, score: 900, completedAt: 2 });
+  assert.equal(slower.records.length, 1);
+  assert.equal(slower.records[0].elapsed, 60);
+  assert.equal(slower.isPersonalBest, false);
+
+  const faster = updateRanking(records, { name: "ALICE", elapsed: 55, score: 650, completedAt: 3 });
+  assert.equal(faster.records[0].elapsed, 55);
+  assert.equal(faster.isPersonalBest, true);
 });
