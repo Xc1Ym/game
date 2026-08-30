@@ -445,7 +445,7 @@
       state.score += timeBonus;
       const ranking = recordWin();
       const rankingText = ranking
-        ? `${ranking.isPersonalBest ? "刷新个人最佳" : "保留个人最佳"}${ranking.rank ? `，本机第 ${ranking.rank} 名` : "，暂未进入前 10"}`
+        ? (ranking.rank ? `本局进入本机前 10，第 ${ranking.rank} 名` : "本局成绩暂未进入本机前 10")
         : "浏览器未允许保存本机成绩";
       elements.resultFruit.textContent = "🏆";
       elements.resultEyebrow.textContent = "丰收时刻";

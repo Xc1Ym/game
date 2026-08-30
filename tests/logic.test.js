@@ -71,17 +71,31 @@ test("updateRanking sorts by fastest time and uses score as the tie breaker", ()
 
   assert.deepEqual(result.records.map((record) => record.name), ["小雨", "阿明", "小林"]);
   assert.equal(result.rank, 1);
-  assert.equal(result.isPersonalBest, true);
 });
 
-test("updateRanking keeps only a player's best result", () => {
+test("updateRanking keeps multiple results from the same player", () => {
   const records = [{ name: "Alice", elapsed: 60, score: 700, completedAt: 1 }];
   const slower = updateRanking(records, { name: "alice", elapsed: 75, score: 900, completedAt: 2 });
-  assert.equal(slower.records.length, 1);
-  assert.equal(slower.records[0].elapsed, 60);
-  assert.equal(slower.isPersonalBest, false);
+  assert.equal(slower.records.length, 2);
+  assert.deepEqual(slower.records.map((record) => record.elapsed), [60, 75]);
+  assert.equal(slower.rank, 2);
+});
 
-  const faster = updateRanking(records, { name: "ALICE", elapsed: 55, score: 650, completedAt: 3 });
-  assert.equal(faster.records[0].elapsed, 55);
-  assert.equal(faster.isPersonalBest, true);
+test("updateRanking retains only the fastest ten results", () => {
+  const records = Array.from({ length: 10 }, (_, index) => ({
+    name: `玩家${index + 1}`,
+    elapsed: 30 + index,
+    score: 1000 - index,
+    completedAt: index,
+  }));
+  const result = updateRanking(records, {
+    name: "再来一局",
+    elapsed: 90,
+    score: 2000,
+    completedAt: 20,
+  });
+
+  assert.equal(result.records.length, 10);
+  assert.equal(result.records.some((record) => record.name === "再来一局"), false);
+  assert.equal(result.rank, null);
 });
