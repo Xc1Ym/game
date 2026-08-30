@@ -136,6 +136,7 @@
         tile.dataset.col = colIndex;
         tile.setAttribute("role", "gridcell");
         tile.setAttribute("aria-label", fruit == null ? "已消除" : FRUIT_NAMES[fruit]);
+        tile.setAttribute("aria-selected", "false");
         tile.disabled = fruit == null;
         if (fruit != null) {
           const image = document.createElement("img");
@@ -148,7 +149,10 @@
         elements.board.appendChild(tile);
       });
     });
-    if (state.selected) tileAt(state.selected)?.classList.add("selected");
+    if (state.selected) {
+      tileAt(state.selected)?.classList.add("selected");
+      tileAt(state.selected)?.setAttribute("aria-selected", "true");
+    }
     updateStatus();
   }
 
@@ -214,10 +218,12 @@
     if (!state.selected) {
       state.selected = position;
       tileAt(position)?.classList.add("selected");
+      tileAt(position)?.setAttribute("aria-selected", "true");
       return;
     }
     if (state.selected.row === position.row && state.selected.col === position.col) {
       tileAt(position)?.classList.remove("selected");
+      tileAt(position)?.setAttribute("aria-selected", "false");
       state.selected = null;
       return;
     }
@@ -225,6 +231,7 @@
     const first = state.selected;
     const path = findPath(state.board, first, position);
     tileAt(first)?.classList.remove("selected");
+    tileAt(first)?.setAttribute("aria-selected", "false");
     state.selected = null;
 
     if (!path) {

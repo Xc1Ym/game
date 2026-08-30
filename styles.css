@@ -268,10 +268,39 @@ h1 {
 
 .tile.selected {
   z-index: 2;
-  background: #fff5dd;
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(239, 157, 68, 0.24), 0 7px 14px rgba(106, 73, 38, 0.16);
-  transform: translateY(-2px) scale(1.05);
+  background: linear-gradient(145deg, #fff9d8, #ffe4b7);
+  border: 2px solid #e86f2d;
+  box-shadow:
+    0 0 0 3px #fffdf7,
+    0 0 0 6px rgba(232, 111, 45, 0.72),
+    0 10px 22px rgba(154, 76, 31, 0.28);
+  transform: translateY(-3px) scale(1.08);
+  animation: selectedPulse 0.75s ease-in-out infinite alternate;
+}
+
+.tile.selected::before {
+  position: absolute;
+  z-index: 4;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  width: clamp(18px, 2vw, 23px);
+  height: clamp(18px, 2vw, 23px);
+  place-items: center;
+  color: #fff;
+  font-family: "PingFang SC", sans-serif;
+  font-size: clamp(0.62rem, 1vw, 0.78rem);
+  font-weight: 800;
+  line-height: 1;
+  background: #e86f2d;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 3px 7px rgba(123, 59, 24, 0.3);
+  content: "✓";
+}
+
+.tile.selected > img {
+  filter: saturate(1.16) drop-shadow(0 3px 3px rgba(112, 58, 24, 0.22));
 }
 
 .tile.hinted { animation: hintPulse 0.48s ease-in-out 2; border-color: #e7a43d; }
@@ -382,6 +411,10 @@ h1 {
 .result-button { width: 100%; padding: 12px; }
 
 @keyframes pulse { to { opacity: .6; } }
+@keyframes selectedPulse {
+  from { box-shadow: 0 0 0 3px #fffdf7, 0 0 0 6px rgba(232, 111, 45, 0.58), 0 10px 22px rgba(154, 76, 31, 0.24); }
+  to { box-shadow: 0 0 0 3px #fffdf7, 0 0 0 8px rgba(232, 111, 45, 0.82), 0 13px 26px rgba(154, 76, 31, 0.34); }
+}
 @keyframes hintPulse { 50% { z-index: 3; box-shadow: 0 0 0 5px rgba(240, 171, 67, .3); transform: scale(1.08); } }
 @keyframes shake { 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-2px); } }
 @keyframes harvest { to { opacity: 0; transform: scale(.3) rotate(15deg); } }
