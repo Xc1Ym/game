@@ -56,6 +56,7 @@
     board: document.querySelector("#board"),
     boardWrap: document.querySelector("#boardWrap"),
     score: document.querySelector("#score"),
+    scoreDifficulty: document.querySelector("#scoreDifficulty"),
     remaining: document.querySelector("#remaining"),
     timeText: document.querySelector("#timeText"),
     timerFill: document.querySelector("#timerFill"),
@@ -73,11 +74,13 @@
     resultTitle: document.querySelector("#resultTitle"),
     resultMessage: document.querySelector("#resultMessage"),
     finalScore: document.querySelector("#finalScore"),
+    resultDifficulty: document.querySelector("#resultDifficulty"),
     playAgainButton: document.querySelector("#playAgainButton"),
     playerName: document.querySelector("#playerName"),
     leaderboardButton: document.querySelector("#leaderboardButton"),
     leaderboardModal: document.querySelector("#leaderboardModal"),
     rankingList: document.querySelector("#rankingList"),
+    rankingScoreLabel: document.querySelector("#rankingScoreLabel"),
     closeLeaderboardButton: document.querySelector("#closeLeaderboardButton"),
     rankingDoneButton: document.querySelector("#rankingDoneButton"),
   };
@@ -171,6 +174,7 @@
   function renderLeaderboard() {
     const leaderboard = loadLeaderboard();
     const records = leaderboard[state.rankingLevel];
+    elements.rankingScoreLabel.textContent = `积分·${LEVELS[state.rankingLevel].label}`;
     document.querySelectorAll(".ranking-tab").forEach((button) => {
       button.classList.toggle("active", button.dataset.rankingLevel === state.rankingLevel);
     });
@@ -232,6 +236,7 @@
     const config = LEVELS[state.level];
     const remaining = countRemaining(state.board);
     elements.score.textContent = state.score.toLocaleString("zh-CN");
+    elements.scoreDifficulty.textContent = config.label;
     elements.remaining.textContent = remaining;
     elements.timeText.textContent = formatTime(state.remainingTime);
     elements.hintCount.textContent = state.hints;
@@ -462,6 +467,7 @@
       elements.resultMessage.textContent = "换个节奏，再来挑战一次吧。";
       playTone(220, 0.2);
     }
+    elements.resultDifficulty.textContent = LEVELS[state.level].label;
     elements.finalScore.textContent = state.score.toLocaleString("zh-CN");
     updateStatus();
     window.setTimeout(() => elements.modal.classList.remove("hidden"), 250);

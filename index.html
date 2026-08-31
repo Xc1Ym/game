@@ -39,7 +39,7 @@
       <section class="game-card">
         <div class="status-row" aria-label="当前游戏状态">
           <div class="status-item score-box">
-            <span class="status-label">得分</span>
+            <span class="status-label">积分 · <span id="scoreDifficulty">悠闲</span></span>
             <strong id="score">0</strong>
           </div>
           <div class="time-box">
@@ -86,7 +86,7 @@
         <p class="eyebrow" id="resultEyebrow">丰收时刻</p>
         <h2 id="resultTitle">太棒了！</h2>
         <p id="resultMessage">你成功清空了果园。</p>
-        <div class="result-score"><span>本局得分</span><strong id="finalScore">0</strong></div>
+        <div class="result-score"><span>本局积分 · <span id="resultDifficulty">悠闲</span></span><strong id="finalScore">0</strong></div>
         <button class="new-game result-button" id="playAgainButton" type="button">再玩一局</button>
       </div>
     </div>
@@ -103,7 +103,7 @@
           <button class="ranking-tab" type="button" data-ranking-level="hard">挑战</button>
         </div>
         <div class="ranking-header" aria-hidden="true">
-          <span>名次</span><span>玩家</span><span>积分</span><span>用时</span>
+          <span>名次</span><span>玩家</span><span id="rankingScoreLabel">积分·悠闲</span><span>用时</span>
         </div>
         <div class="ranking-list" id="rankingList" role="list"></div>
         <button class="new-game ranking-close-button" id="rankingDoneButton" type="button">关闭</button>
