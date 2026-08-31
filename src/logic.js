@@ -162,19 +162,21 @@
     );
   }
 
+  function sortRanking(records, limit = 10) {
+    return [...records].sort((first, second) =>
+      second.score - first.score
+      || first.elapsed - second.elapsed
+      || first.completedAt - second.completedAt,
+    ).slice(0, limit);
+  }
+
   function updateRanking(records, entry, limit = 10) {
     const normalizedEntry = { ...entry, name: entry.name.trim() };
-    const updated = [...records, normalizedEntry];
-    updated.sort((first, second) =>
-      first.elapsed - second.elapsed
-      || second.score - first.score
-      || first.completedAt - second.completedAt,
-    );
-    const rankIndex = updated.indexOf(normalizedEntry);
-    const limited = updated.slice(0, limit);
+    const limited = sortRanking([...records, normalizedEntry], limit);
+    const rankIndex = limited.indexOf(normalizedEntry);
     return {
       records: limited,
-      rank: rankIndex < limit ? rankIndex + 1 : null,
+      rank: rankIndex >= 0 ? rankIndex + 1 : null,
     };
   }
 
@@ -185,6 +187,7 @@
     shuffleRemaining,
     countRemaining,
     shuffled,
+    sortRanking,
     updateRanking,
   };
   globalScope.FruitLinkLogic = api;

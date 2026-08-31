@@ -7,6 +7,7 @@
     findAvailablePair,
     shuffleRemaining,
     countRemaining,
+    sortRanking,
     updateRanking,
   } = window.FruitLinkLogic;
   const FRUITS = [
@@ -113,13 +114,13 @@
       if (!parsed || typeof parsed !== "object") return emptyLeaderboard();
       return Object.fromEntries(Object.keys(LEVELS).map((level) => [
         level,
-        Array.isArray(parsed[level]) ? parsed[level].filter((record) =>
+        sortRanking(Array.isArray(parsed[level]) ? parsed[level].filter((record) =>
           record
           && typeof record.name === "string"
           && Number.isFinite(record.elapsed)
           && Number.isFinite(record.score)
           && Number.isFinite(record.completedAt),
-        ) : [],
+        ) : []),
       ]));
     } catch {
       return emptyLeaderboard();
@@ -185,7 +186,7 @@
       const row = document.createElement("div");
       row.className = `ranking-row${index < 3 ? ` top-${index + 1}` : ""}`;
       row.setAttribute("role", "listitem");
-      [String(index + 1), record.name, formatTime(record.elapsed), record.score.toLocaleString("zh-CN")]
+      [String(index + 1), record.name, record.score.toLocaleString("zh-CN"), formatTime(record.elapsed)]
         .forEach((value) => {
           const cell = document.createElement("span");
           cell.textContent = value;

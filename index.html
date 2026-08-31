@@ -95,15 +95,15 @@
       <div class="ranking-card">
         <button class="modal-close" id="closeLeaderboardButton" type="button" aria-label="关闭排行榜">×</button>
         <p class="eyebrow">LOCAL RECORDS</p>
-        <h2 id="leaderboardTitle">本机最快排行</h2>
-        <p class="ranking-note">保留最快的 10 局成绩，同一玩家可多次上榜；数据仅存于当前浏览器</p>
+        <h2 id="leaderboardTitle">本机积分排行</h2>
+        <p class="ranking-note">保留积分最高的 10 局，同分时用时短的优先；同一玩家可多次上榜，数据仅存于当前浏览器</p>
         <div class="ranking-tabs" role="group" aria-label="排行榜难度">
           <button class="ranking-tab active" type="button" data-ranking-level="easy">悠闲</button>
           <button class="ranking-tab" type="button" data-ranking-level="normal">进阶</button>
           <button class="ranking-tab" type="button" data-ranking-level="hard">挑战</button>
         </div>
         <div class="ranking-header" aria-hidden="true">
-          <span>名次</span><span>玩家</span><span>用时</span><span>得分</span>
+          <span>名次</span><span>玩家</span><span>积分</span><span>用时</span>
         </div>
         <div class="ranking-list" id="rankingList" role="list"></div>
         <button class="new-game ranking-close-button" id="rankingDoneButton" type="button">关闭</button>
