@@ -96,6 +96,9 @@
     combo: 0,
     lastMatchAt: 0,
     timer: null,
+    pathTimer: null,
+    resultTimer: null,
+    shuffleTimer: null,
     locked: false,
     sound: true,
     audioContext: null,
@@ -252,6 +255,7 @@
   }
 
   function renderBoard() {
+    clearPath();
     const config = LEVELS[state.level];
     elements.board.style.setProperty("--columns", config.cols);
     elements.board.style.setProperty("--rows", config.rows);
@@ -286,31 +290,35 @@
   }
 
   function positionToPoint(position) {
-    const gridRect = elements.board.getBoundingClientRect();
     const first = elements.board.querySelector(".tile");
     const secondColumn = elements.board.querySelector('[data-row="0"][data-col="1"]');
     const secondRow = elements.board.querySelector('[data-row="1"][data-col="0"]');
     if (!first) return { x: 0, y: 0 };
-    const firstRect = first.getBoundingClientRect();
-    const stepX = secondColumn ? secondColumn.getBoundingClientRect().left - firstRect.left : firstRect.width;
-    const stepY = secondRow ? secondRow.getBoundingClientRect().top - firstRect.top : firstRect.height;
+    // Layout offsets ignore shrinking/selection transforms on other tiles.
+    const stepX = secondColumn ? secondColumn.offsetLeft - first.offsetLeft : first.offsetWidth;
+    const stepY = secondRow ? secondRow.offsetTop - first.offsetTop : first.offsetHeight;
     return {
-      x: firstRect.left - gridRect.left + firstRect.width / 2 + position.col * stepX,
-      y: firstRect.top - gridRect.top + firstRect.height / 2 + position.row * stepY,
+      x: first.offsetLeft + first.offsetWidth / 2 + position.col * stepX,
+      y: first.offsetTop + first.offsetHeight / 2 + position.row * stepY,
     };
   }
 
+  function clearPath() {
+    window.clearTimeout(state.pathTimer);
+    state.pathTimer = null;
+    elements.pathLayer.classList.remove("visible");
+    elements.pathLayer.innerHTML = "";
+  }
+
   function showPath(path) {
+    clearPath();
     const width = elements.board.clientWidth;
     const height = elements.board.clientHeight;
     elements.pathLayer.setAttribute("viewBox", `0 0 ${width} ${height}`);
     const points = path.map(positionToPoint).map(({ x, y }) => `${x},${y}`).join(" ");
     elements.pathLayer.innerHTML = `<polyline points="${points}" />`;
     elements.pathLayer.classList.add("visible");
-    window.setTimeout(() => {
-      elements.pathLayer.classList.remove("visible");
-      elements.pathLayer.innerHTML = "";
-    }, 280);
+    state.pathTimer = window.setTimeout(clearPath, 280);
   }
 
   function flashInvalid(first, second) {
@@ -338,16 +346,25 @@
     elements.comboBadge.classList.add("show");
   }
 
+  function animateShuffle() {
+    window.clearTimeout(state.shuffleTimer);
+    elements.boardWrap.classList.add("auto-shuffled");
+    state.shuffleTimer = window.setTimeout(() => {
+      elements.boardWrap.classList.remove("auto-shuffled");
+      state.shuffleTimer = null;
+    }, 550);
+  }
+
   function ensureMoveAvailable() {
     if (countRemaining(state.board) === 0 || findAvailablePair(state.board)) return;
+    state.selected = null;
     let attempts = 0;
     do {
       state.board = shuffleRemaining(state.board);
       attempts += 1;
     } while (!findAvailablePair(state.board) && attempts < 100);
     renderBoard();
-    elements.boardWrap.classList.add("auto-shuffled");
-    window.setTimeout(() => elements.boardWrap.classList.remove("auto-shuffled"), 550);
+    animateShuffle();
   }
 
   function chooseTile(position) {
@@ -383,15 +400,19 @@
       return;
     }
 
-    state.locked = true;
     const now = Date.now();
     state.combo = now - state.lastMatchAt < 3000 ? state.combo + 1 : 1;
     state.lastMatchAt = now;
     state.score += 20 + Math.max(0, state.combo - 1) * 5;
     state.board[first.row][first.col] = null;
     state.board[position.row][position.col] = null;
-    tileAt(first)?.classList.add("matched");
-    tileAt(position)?.classList.add("matched");
+    const matchedTiles = [tileAt(first), tileAt(position)];
+    matchedTiles.forEach((tile) => {
+      tile.disabled = true;
+      tile.classList.remove("hinted", "invalid");
+      tile.classList.add("matched");
+      tile.setAttribute("aria-label", "已消除");
+    });
     showPath(path);
     showCombo();
     playTone(620, 0.08);
@@ -399,11 +420,15 @@
     updateStatus();
 
     window.setTimeout(() => {
-      renderBoard();
-      state.locked = false;
-      if (countRemaining(state.board) === 0) finishGame(true);
-      else ensureMoveAvailable();
+      // Only retire these tiles: later clicks and newly rendered boards stay intact.
+      matchedTiles.forEach((tile) => {
+        tile.classList.remove("matched");
+        tile.classList.add("removed");
+        tile.innerHTML = "";
+      });
     }, 290);
+    if (countRemaining(state.board) === 0) finishGame(true);
+    else ensureMoveAvailable();
   }
 
   function showHint() {
@@ -434,13 +459,13 @@
     do state.board = shuffleRemaining(state.board);
     while (!findAvailablePair(state.board));
     renderBoard();
-    elements.boardWrap.classList.add("auto-shuffled");
-    window.setTimeout(() => elements.boardWrap.classList.remove("auto-shuffled"), 550);
+    animateShuffle();
     playTone(440, 0.06);
     playTone(660, 0.08, 0.07);
   }
 
   function finishGame(won) {
+    if (state.locked) return;
     window.clearInterval(state.timer);
     state.timer = null;
     state.locked = true;
@@ -470,7 +495,10 @@
     elements.resultDifficulty.textContent = LEVELS[state.level].label;
     elements.finalScore.textContent = state.score.toLocaleString("zh-CN");
     updateStatus();
-    window.setTimeout(() => elements.modal.classList.remove("hidden"), 250);
+    state.resultTimer = window.setTimeout(() => {
+      elements.modal.classList.remove("hidden");
+      state.resultTimer = null;
+    }, 290);
   }
 
   function startTimer() {
@@ -483,6 +511,12 @@
   }
 
   function newGame() {
+    window.clearTimeout(state.resultTimer);
+    window.clearTimeout(state.shuffleTimer);
+    state.resultTimer = null;
+    state.shuffleTimer = null;
+    elements.boardWrap.classList.remove("auto-shuffled");
+    elements.comboBadge.classList.remove("show", "penalty");
     const config = LEVELS[state.level];
     state.board = createBoard(config.rows, config.cols, FRUITS.slice(0, config.types));
     state.selected = null;
@@ -537,10 +571,7 @@
     elements.soundButton.setAttribute("aria-label", state.sound ? "关闭音效" : "开启音效");
     if (state.sound) playTone(600, 0.08);
   });
-  window.addEventListener("resize", () => {
-    elements.pathLayer.classList.remove("visible");
-    elements.pathLayer.innerHTML = "";
-  });
+  window.addEventListener("resize", clearPath);
 
   try {
     elements.playerName.value = localStorage.getItem(STORAGE_KEYS.playerName) || "玩家1";
