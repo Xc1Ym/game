@@ -132,6 +132,7 @@
       const cell = cells[index];
       if (!cell || cell.flagged || cell.revealed) continue;
       cell.revealed = true;
+      cell.justRevealed = true;
       if (cell.count === 0 && !cell.mine) {
         getNeighbors(index, config.rows, config.cols).forEach((neighbor) => queue.push(neighbor));
       }
@@ -144,13 +145,18 @@
     if (won) {
       saveBest(Math.max(1, seconds));
       resultTitle.textContent = "果园安全了！";
-      resultMessage.textContent = "你在 " + formatTime(seconds) + " 内找出了全部害虫。";
+      resultMessage.textContent = "你在 " + formatTime(seconds) + " 内排除了全部地雷。";
       resultImage.src = "../../assets/fruits/kiwi.png";
     } else {
-      cells.forEach((cell) => { if (cell.mine) cell.revealed = true; });
-      resultTitle.textContent = "踩到害虫了";
+      cells.forEach((cell) => {
+        if (cell.mine && !cell.revealed) {
+          cell.revealed = true;
+          cell.justRevealed = true;
+        }
+      });
+      resultTitle.textContent = "踩到地雷了";
       resultMessage.textContent = "换条路线，再检查一次数字线索。";
-      resultImage.src = "../../assets/fruits/pomegranate.png";
+      resultImage.src = "../../assets/landmine.png";
     }
     renderBoard();
     updateStatus();
@@ -171,6 +177,8 @@
     }
     if (cells[index].mine) {
       cells[index].revealed = true;
+      cells[index].justRevealed = true;
+      cells[index].triggered = true;
       endGame(false);
       return;
     }
@@ -194,19 +202,50 @@
     else revealCell(index);
   }
 
-  function renderBoard() {
+  function createBoardElements() {
     boardElement.replaceChildren();
-    boardElement.style.setProperty("--rows", config.rows);
-    boardElement.style.setProperty("--cols", config.cols);
     cells.forEach((cell, index) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "mine-cell";
       button.setAttribute("role", "gridcell");
-      button.setAttribute("aria-label", cell.revealed ? (cell.mine ? "害虫" : "周围 " + cell.count + " 个害虫") : (cell.flagged ? "已插旗" : "未翻开"));
+      button.addEventListener("click", () => handleCell(index));
+      button.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        toggleFlag(index);
+      });
+      button.addEventListener("animationend", () => button.classList.remove("is-opening"));
+      boardElement.appendChild(button);
+    });
+  }
+
+  function renderBoard() {
+    boardElement.style.setProperty("--rows", config.rows);
+    boardElement.style.setProperty("--cols", config.cols);
+    if (boardElement.children.length !== cells.length) createBoardElements();
+    cells.forEach((cell, index) => {
+      const button = boardElement.children[index];
+      const viewKey = [cell.revealed, cell.flagged, cell.mine, cell.count, cell.triggered].join("-");
+      if (button.dataset.view === viewKey && !cell.justRevealed) return;
+      button.dataset.view = viewKey;
+      button.className = "mine-cell";
+      button.removeAttribute("data-count");
+      button.replaceChildren();
+      button.setAttribute("aria-label", cell.revealed ? (cell.mine ? "地雷" : "周围 " + cell.count + " 个地雷") : (cell.flagged ? "已插旗" : "未翻开"));
       if (cell.revealed) {
         button.classList.add("is-revealed");
-        if (cell.mine) button.classList.add("is-mine");
+        if (cell.justRevealed) {
+          button.classList.add("is-opening");
+          cell.justRevealed = false;
+        }
+        if (cell.mine) {
+          button.classList.add("is-mine");
+          if (cell.triggered) button.classList.add("is-triggered");
+          const image = document.createElement("img");
+          image.src = "../../assets/landmine.png";
+          image.alt = "";
+          button.appendChild(image);
+        }
         else if (cell.count > 0) {
           button.dataset.count = String(cell.count);
           button.textContent = String(cell.count);
@@ -214,12 +253,6 @@
       } else if (cell.flagged) {
         button.classList.add("is-flagged");
       }
-      button.addEventListener("click", () => handleCell(index));
-      button.addEventListener("contextmenu", (event) => {
-        event.preventDefault();
-        toggleFlag(index);
-      });
-      boardElement.appendChild(button);
     });
   }
 
@@ -231,6 +264,8 @@
       count: 0,
       revealed: false,
       flagged: false,
+      justRevealed: false,
+      triggered: false,
     }));
     mines = new Set();
     firstMove = true;

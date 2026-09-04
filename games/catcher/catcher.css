@@ -25,7 +25,7 @@
   position: absolute;
   z-index: 5;
   bottom: 23px;
-  left: 50%;
+  left: 0;
   display: grid;
   width: 116px;
   height: 57px;
@@ -38,8 +38,8 @@
   font-size: 0.8rem;
   font-weight: 900;
   letter-spacing: 0.1em;
-  transform: translateX(-50%);
-  transition: left 70ms linear;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
 
 .falling-item {
@@ -49,6 +49,7 @@
   left: 0;
   width: clamp(48px, 7vw, 68px);
   height: clamp(48px, 7vw, 68px);
+  contain: layout paint;
   will-change: transform;
 }
 .falling-item img {
@@ -59,27 +60,12 @@
   pointer-events: none;
 }
 .falling-item.is-bad {
-  padding: 4px;
-  background: rgba(202, 55, 43, 0.12);
-  border: 4px solid #d64d3d;
-  border-radius: 50%;
+  z-index: 4;
+  width: clamp(54px, 7.5vw, 74px);
+  height: clamp(54px, 7.5vw, 74px);
+  animation: bomb-warning 620ms ease-in-out infinite alternate;
 }
-.falling-item.is-bad::after {
-  position: absolute;
-  right: -8px;
-  bottom: -7px;
-  display: grid;
-  width: 25px;
-  height: 25px;
-  place-items: center;
-  color: #fff;
-  background: #bd382e;
-  border: 2px solid #fff0d4;
-  border-radius: 50%;
-  content: "×";
-  font-size: 1rem;
-  font-weight: 950;
-}
+.falling-item.is-bad img { filter: drop-shadow(0 0 8px rgba(224, 73, 35, 0.68)) drop-shadow(0 7px 5px rgba(45, 78, 54, 0.22)); }
 
 .catch-pop {
   position: absolute;
@@ -116,6 +102,11 @@
 @keyframes pop-up {
   from { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
   to { opacity: 0; transform: translate(-50%, -45px) scale(1.15); }
+}
+
+@keyframes bomb-warning {
+  from { filter: brightness(0.96); }
+  to { filter: brightness(1.1); }
 }
 
 @media (max-width: 620px) {

@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#174936" />
-    <meta name="description" content="根据数字线索找出果园害虫的水果主题扫雷游戏。" />
+    <meta name="description" content="根据数字线索排除果园地雷的水果主题扫雷游戏。" />
     <title>果园扫雷｜果园街机厅</title>
+    <link rel="preload" href="../../assets/landmine.png" as="image" />
     <link rel="stylesheet" href="../shared.css" />
     <link rel="stylesheet" href="mines.css" />
   </head>
@@ -33,7 +34,7 @@
       </section>
 
       <section class="status-strip" aria-label="本局状态">
-        <div class="status-box"><span>剩余害虫</span><strong id="minesLeft">10</strong></div>
+        <div class="status-box"><span class="mine-counter-label"><img src="../../assets/landmine.png" alt="" />剩余地雷</span><strong id="minesLeft">10</strong></div>
         <div class="status-box"><span>用时</span><strong id="timer">00:00</strong></div>
         <div class="status-box"><span>已翻开</span><strong id="revealedCount">0</strong></div>
         <div class="status-box"><span>本机最佳</span><strong id="bestTime">--:--</strong></div>
@@ -50,7 +51,7 @@
           </div>
         </div>
       </section>
-      <p class="game-help">电脑可左键翻开、右键插旗；手机先选择“翻开”或“插旗”，再点格子。第一次翻开一定安全。</p>
+      <p class="game-help">数字表示周围八格内的地雷数量。电脑可右键插旗；手机先选择“翻开”或“插旗”。第一次翻开一定安全。</p>
     </main>
     <script src="mines.js"></script>
   </body>

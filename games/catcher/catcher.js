@@ -11,7 +11,12 @@
     return first.left < second.right && first.right > second.left && first.top < second.bottom && first.bottom > second.top;
   }
 
-  const api = { clamp, overlaps };
+  function smoothPosition(current, target, response, deltaSeconds) {
+    const alpha = 1 - Math.exp(-response * Math.max(0, deltaSeconds));
+    return current + (target - current) * alpha;
+  }
+
+  const api = { clamp, overlaps, smoothPosition };
   if (!document) return api;
 
   const LEVELS = {
@@ -39,7 +44,8 @@
   let level = "easy";
   let config = LEVELS[level];
   let items = [];
-  let basketPercent = 50;
+  let basketX = 0;
+  let targetBasketX = 0;
   let score = 0;
   let combo = 0;
   let maxCombo = 0;
@@ -50,6 +56,8 @@
   let active = false;
   let paused = false;
   let dragging = false;
+  let leftPressed = false;
+  let rightPressed = false;
 
   function formatTime(seconds) {
     const safeSeconds = Math.max(0, seconds);
@@ -77,13 +85,36 @@
     bestElement.textContent = String(readBest());
   }
 
-  function setBasket(percent) {
-    basketPercent = clamp(percent, 7, 93);
-    catcher.style.left = basketPercent + "%";
+  function basketLimits() {
+    const halfWidth = catcher.offsetWidth / 2;
+    return { minimum: halfWidth, maximum: Math.max(halfWidth, field.clientWidth - halfWidth) };
+  }
+
+  function applyBasketPosition() {
+    catcher.style.transform = "translate3d(" + (basketX - catcher.offsetWidth / 2) + "px, 0, 0)";
+  }
+
+  function setBasketTarget(pixelX, immediate = false) {
+    const limits = basketLimits();
+    targetBasketX = clamp(pixelX, limits.minimum, limits.maximum);
+    if (immediate) basketX = targetBasketX;
+    applyBasketPosition();
+  }
+
+  function setBasketPercent(percent, immediate = false) {
+    setBasketTarget(field.clientWidth * clamp(percent, 0, 100) / 100, immediate);
   }
 
   function moveBasket(step) {
-    setBasket(basketPercent + step * 9);
+    setBasketTarget(targetBasketX + step * Math.max(64, field.clientWidth * 0.09));
+  }
+
+  function updateBasket(deltaSeconds) {
+    const direction = Number(rightPressed) - Number(leftPressed);
+    if (direction) setBasketTarget(targetBasketX + direction * 540 * deltaSeconds);
+    basketX = smoothPosition(basketX, targetBasketX, dragging ? 30 : 20, deltaSeconds);
+    if (Math.abs(basketX - targetBasketX) < 0.05) basketX = targetBasketX;
+    applyBasketPosition();
   }
 
   function clearItems() {
@@ -98,7 +129,7 @@
     element.className = "falling-item" + (bad ? " is-bad" : "");
     const image = document.createElement("img");
     image.src = bad
-      ? "../../assets/fruits/pomegranate.png"
+      ? "../../assets/bomb.png"
       : "../../assets/fruits/" + FRUITS[Math.floor(Math.random() * FRUITS.length)] + ".png";
     image.alt = "";
     element.appendChild(image);
@@ -149,7 +180,7 @@
     const fieldWidth = field.clientWidth;
     const basketWidth = catcher.offsetWidth;
     const basketHeight = catcher.offsetHeight;
-    const basketLeft = fieldWidth * basketPercent / 100 - basketWidth / 2;
+    const basketLeft = basketX - basketWidth / 2;
     const basketTop = catcher.offsetTop;
     const basketRect = {
       left: basketLeft,
@@ -203,6 +234,7 @@
       spawnElapsed -= config.spawnEvery;
       spawnItem();
     }
+    updateBasket(deltaMs / 1000);
     updateItems(deltaMs / 1000);
     updateStatus();
 
@@ -222,7 +254,7 @@
     lastTime = 0;
     active = true;
     paused = false;
-    setBasket(50);
+    setBasketPercent(50, true);
     pauseButton.disabled = false;
     pauseButton.textContent = "暂停";
     resultOverlay.classList.add("is-hidden");
@@ -244,7 +276,7 @@
 
   function moveFromPointer(event) {
     const bounds = field.getBoundingClientRect();
-    setBasket((event.clientX - bounds.left) / bounds.width * 100);
+    setBasketTarget(event.clientX - bounds.left);
   }
 
   field.addEventListener("pointerdown", (event) => {
@@ -260,19 +292,38 @@
   field.addEventListener("pointercancel", () => { dragging = false; });
 
   document.querySelectorAll("[data-move]").forEach((button) => {
-    button.addEventListener("click", () => moveBasket(Number(button.dataset.move)));
+    const direction = Number(button.dataset.move);
+    const setPressed = (pressed) => {
+      if (direction < 0) leftPressed = pressed;
+      else rightPressed = pressed;
+    };
+    button.addEventListener("pointerdown", () => setPressed(true));
+    button.addEventListener("pointerup", () => setPressed(false));
+    button.addEventListener("pointercancel", () => setPressed(false));
+    button.addEventListener("pointerleave", () => setPressed(false));
+    button.addEventListener("click", () => moveBasket(direction));
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") {
       event.preventDefault();
-      moveBasket(-1);
+      leftPressed = true;
     } else if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") {
       event.preventDefault();
-      moveBasket(1);
+      rightPressed = true;
     } else if (event.key === " " && active) {
       event.preventDefault();
       togglePause();
     }
+  });
+  document.addEventListener("keyup", (event) => {
+    if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") leftPressed = false;
+    if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") rightPressed = false;
+  });
+  root.addEventListener("resize", () => {
+    const limits = basketLimits();
+    targetBasketX = clamp(targetBasketX, limits.minimum, limits.maximum);
+    basketX = clamp(basketX, limits.minimum, limits.maximum);
+    applyBasketPosition();
   });
 
   difficultyButtons.forEach((button) => {

@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { slideLine, moveBoard, addRandomTile, canMove } = require("../games/merge/merge.js");
+const { slideLine, moveBoard, addRandomTile, canMove, planTileMove } = require("../games/merge/merge.js");
 
 test("fruit tiles slide and merge once per move", () => {
   assert.deepEqual(slideLine([1, 1, 1, 1]), { line: [2, 2, 0, 0], scoreGain: 8 });
@@ -38,4 +38,22 @@ test("full board without adjacent matches is game over", () => {
   assert.equal(canMove(board), false);
   board[15] = 0;
   assert.equal(canMove(board), true);
+});
+
+test("animation plan preserves moving tiles and replaces only merged pairs", () => {
+  let mergedId = 0;
+  const tiles = [
+    { id: "a", level: 1, position: 0 },
+    { id: "b", level: 1, position: 2 },
+    { id: "c", level: 2, position: 7 },
+  ];
+  const plan = planTileMove(tiles, "left", 4, () => "m" + (++mergedId));
+  assert.equal(plan.moved, true);
+  assert.equal(plan.scoreGain, 4);
+  assert.deepEqual(plan.tiles, [
+    { id: "m1", level: 2, position: 0, merged: true },
+    { id: "c", level: 2, position: 4 },
+  ]);
+  assert.deepEqual(plan.transitions.filter((transition) => transition.removed).map((transition) => transition.id), ["a", "b"]);
+  assert.equal(plan.transitions.find((transition) => transition.id === "c").toPosition, 4);
 });

@@ -1,4 +1,6 @@
 .mine-panel { padding: clamp(12px, 3vw, 25px); background: #e9f2de; }
+.mine-counter-label { display: flex !important; align-items: center; gap: 5px; }
+.mine-counter-label img { width: 23px; height: 23px; object-fit: contain; }
 
 .mine-board {
   display: grid;
@@ -40,18 +42,19 @@
   border-color: #c7cfac;
   box-shadow: inset 0 0 0 1px rgba(116, 138, 90, 0.12);
 }
+.mine-cell.is-opening { animation: cell-open 180ms cubic-bezier(0.2, 0.85, 0.35, 1); }
 .mine-cell.is-flagged {
   color: #b54932;
   background: #ffe0a2;
 }
 .mine-cell.is-flagged::after { content: "▲"; font-size: 0.8em; text-shadow: 0 2px 0 #fff4cd; }
 .mine-cell.is-mine {
-  color: #fff;
-  background: #d65b43;
-  border-color: #a7342b;
+  background: #f0c49d;
+  border-color: #b96f49;
   box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.16);
 }
-.mine-cell.is-mine::after { content: "×"; font-size: 1.45em; }
+.mine-cell.is-mine img { width: 86%; height: 86%; object-fit: contain; filter: drop-shadow(0 3px 2px rgba(61, 40, 27, 0.3)); pointer-events: none; }
+.mine-cell.is-triggered { z-index: 2; background: #e76d4e; animation: mine-trigger 360ms ease-out; }
 .mine-cell[data-count="1"] { color: #2870a3; }
 .mine-cell[data-count="2"] { color: #2b7b47; }
 .mine-cell[data-count="3"] { color: #d15a36; }
@@ -60,6 +63,17 @@
 .mine-cell[data-count="6"],
 .mine-cell[data-count="7"],
 .mine-cell[data-count="8"] { color: #9b3c61; }
+
+@keyframes cell-open {
+  from { opacity: 0.55; transform: scale(0.82) rotate(-1deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes mine-trigger {
+  0% { transform: scale(0.75); }
+  45% { transform: scale(1.18) rotate(-5deg); box-shadow: 0 0 0 10px rgba(226, 86, 51, 0.26); }
+  100% { transform: scale(1); }
+}
 
 @media (max-width: 620px) {
   .mine-panel { padding: 7px; }

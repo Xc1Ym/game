@@ -21,17 +21,22 @@
     return { line: merged, scoreGain };
   }
 
+  function lineIndexes(direction, lineIndex, size) {
+    const indexes = [];
+    for (let offset = 0; offset < size; offset += 1) {
+      if (direction === "left") indexes.push(lineIndex * size + offset);
+      if (direction === "right") indexes.push(lineIndex * size + (size - 1 - offset));
+      if (direction === "up") indexes.push(offset * size + lineIndex);
+      if (direction === "down") indexes.push((size - 1 - offset) * size + lineIndex);
+    }
+    return indexes;
+  }
+
   function moveBoard(board, direction, size = 4) {
     const next = board.slice();
     let scoreGain = 0;
     for (let lineIndex = 0; lineIndex < size; lineIndex += 1) {
-      const indexes = [];
-      for (let offset = 0; offset < size; offset += 1) {
-        if (direction === "left") indexes.push(lineIndex * size + offset);
-        if (direction === "right") indexes.push(lineIndex * size + (size - 1 - offset));
-        if (direction === "up") indexes.push(offset * size + lineIndex);
-        if (direction === "down") indexes.push((size - 1 - offset) * size + lineIndex);
-      }
+      const indexes = lineIndexes(direction, lineIndex, size);
       const result = slideLine(indexes.map((index) => board[index]));
       indexes.forEach((index, position) => { next[index] = result.line[position]; });
       scoreGain += result.scoreGain;
@@ -61,7 +66,44 @@
     return false;
   }
 
-  const api = { slideLine, moveBoard, addRandomTile, canMove };
+  function planTileMove(tiles, direction, size = 4, idFactory = () => "merged") {
+    const byPosition = new Map(tiles.map((tile) => [tile.position, tile]));
+    const nextTiles = [];
+    const transitions = [];
+    let scoreGain = 0;
+
+    for (let lineIndex = 0; lineIndex < size; lineIndex += 1) {
+      const indexes = lineIndexes(direction, lineIndex, size);
+      const lineTiles = indexes.map((position) => byPosition.get(position)).filter(Boolean);
+      let targetOffset = 0;
+
+      for (let index = 0; index < lineTiles.length; index += 1) {
+        const tile = lineTiles[index];
+        const nextTile = lineTiles[index + 1];
+        const targetPosition = indexes[targetOffset];
+        if (nextTile && tile.level === nextTile.level) {
+          const mergedLevel = tile.level + 1;
+          transitions.push(
+            { id: tile.id, fromPosition: tile.position, toPosition: targetPosition, removed: true },
+            { id: nextTile.id, fromPosition: nextTile.position, toPosition: targetPosition, removed: true },
+          );
+          nextTiles.push({ id: idFactory(), level: mergedLevel, position: targetPosition, merged: true });
+          scoreGain += 2 ** mergedLevel;
+          targetOffset += 1;
+          index += 1;
+        } else {
+          transitions.push({ id: tile.id, fromPosition: tile.position, toPosition: targetPosition, removed: false });
+          nextTiles.push({ id: tile.id, level: tile.level, position: targetPosition });
+          targetOffset += 1;
+        }
+      }
+    }
+
+    const moved = transitions.some((transition) => transition.removed || transition.fromPosition !== transition.toPosition);
+    return { tiles: nextTiles, transitions, scoreGain, moved };
+  }
+
+  const api = { slideLine, moveBoard, addRandomTile, canMove, planTileMove };
   if (!document) return api;
 
   const FRUITS = [
@@ -78,6 +120,7 @@
     { name: "火龙果", file: "dragonfruit.png" },
     { name: "西瓜", file: "watermelon.png" },
   ];
+  const MOVE_DURATION = 170;
 
   const boardElement = document.getElementById("mergeBoard");
   const scoreElement = document.getElementById("score");
@@ -90,14 +133,26 @@
   const resultImage = document.getElementById("resultImage");
   const resultButton = document.getElementById("resultButton");
 
-  let board = [];
+  let tileLayer = null;
+  let tiles = [];
+  let tileElements = new Map();
   let score = 0;
   let moves = 0;
   let wonShown = false;
   let resultMode = "continue";
+  let nextId = 1;
+  let animating = false;
+  let animationToken = 0;
+  let settleTimer = null;
   let startX = 0;
   let startY = 0;
   let pointerId = null;
+
+  function createId() {
+    const id = "tile-" + nextId;
+    nextId += 1;
+    return id;
+  }
 
   function readBest() {
     try { return Number(root.localStorage.getItem("orchard-merge-best")) || 0; } catch { return 0; }
@@ -109,30 +164,79 @@
     }
   }
 
-  function highestLevel() {
-    return Math.max(1, ...board);
+  function boardValues() {
+    const values = Array(16).fill(0);
+    tiles.forEach((tile) => { values[tile.position] = tile.level; });
+    return values;
   }
 
-  function render() {
-    boardElement.replaceChildren();
-    board.forEach((level) => {
-      const cell = document.createElement("div");
-      cell.className = "merge-cell" + (level ? " has-fruit" : "");
-      cell.setAttribute("role", "gridcell");
-      if (level) {
-        const fruit = FRUITS[Math.min(level, FRUITS.length - 1)];
-        const image = document.createElement("img");
-        image.src = "../../assets/fruits/" + fruit.file;
-        image.alt = fruit.name;
-        const value = document.createElement("span");
-        value.textContent = String(2 ** level);
-        cell.dataset.level = String(level);
-        cell.append(image, value);
-      } else {
-        cell.setAttribute("aria-label", "空格");
+  function highestLevel() {
+    return Math.max(1, ...tiles.map((tile) => tile.level));
+  }
+
+  function placeElement(element, position) {
+    element.style.gridColumn = String(position % 4 + 1);
+    element.style.gridRow = String(Math.floor(position / 4) + 1);
+  }
+
+  function updateTileContent(element, tile) {
+    const fruit = FRUITS[Math.min(tile.level, FRUITS.length - 1)];
+    element.dataset.level = String(tile.level);
+    const image = element.querySelector("img");
+    const value = element.querySelector("span");
+    image.src = "../../assets/fruits/" + fruit.file;
+    image.alt = fruit.name;
+    value.textContent = String(2 ** tile.level);
+  }
+
+  function createTileElement(tile) {
+    const element = document.createElement("div");
+    element.className = "merge-tile";
+    element.dataset.id = tile.id;
+    element.setAttribute("role", "gridcell");
+    const content = document.createElement("div");
+    content.className = "merge-tile-content";
+    const image = document.createElement("img");
+    const value = document.createElement("span");
+    content.append(image, value);
+    element.appendChild(content);
+    updateTileContent(element, tile);
+    placeElement(element, tile.position);
+    tileLayer.appendChild(element);
+    tileElements.set(tile.id, element);
+    return element;
+  }
+
+  function reconcileTiles() {
+    const activeIds = new Set(tiles.map((tile) => tile.id));
+    tileElements.forEach((element, id) => {
+      if (!activeIds.has(id)) {
+        element.remove();
+        tileElements.delete(id);
       }
-      boardElement.appendChild(cell);
     });
+
+    tiles.forEach((tile) => {
+      const isNewElement = !tileElements.has(tile.id);
+      const element = tileElements.get(tile.id) || createTileElement(tile);
+      element.style.transition = "";
+      element.style.transform = "";
+      placeElement(element, tile.position);
+      updateTileContent(element, tile);
+      if (isNewElement) element.classList.add(tile.merged ? "is-merged" : "is-new");
+      tile.merged = false;
+    });
+  }
+
+  function addRandomGameTile() {
+    const occupied = new Set(tiles.map((tile) => tile.position));
+    const empty = Array.from({ length: 16 }, (_, index) => index).filter((position) => !occupied.has(position));
+    if (!empty.length) return;
+    const position = empty[Math.floor(Math.random() * empty.length)];
+    tiles.push({ id: createId(), level: Math.random() < 0.9 ? 1 : 2, position });
+  }
+
+  function renderStatus() {
     scoreElement.textContent = String(score);
     bestElement.textContent = String(Math.max(score, readBest()));
     moveElement.textContent = String(moves);
@@ -155,30 +259,99 @@
     resultOverlay.classList.remove("is-hidden");
   }
 
-  function handleMove(direction) {
-    if (!resultOverlay.classList.contains("is-hidden")) return;
-    const result = moveBoard(board, direction);
-    if (!result.moved) return;
-    board = addRandomTile(result.board);
-    score += result.scoreGain;
+  function finishMove(plan, token) {
+    if (token !== animationToken) return;
+    tiles = plan.tiles;
+    addRandomGameTile();
+    score += plan.scoreGain;
     moves += 1;
     updateBest();
-    render();
+    reconcileTiles();
+    renderStatus();
+    animating = false;
+
     if (highestLevel() >= 11 && !wonShown) {
       wonShown = true;
       showResult("continue");
-    } else if (!canMove(board)) {
+    } else if (!canMove(boardValues())) {
       showResult("restart");
     }
   }
 
+  function animateMove(plan) {
+    animating = true;
+    const token = ++animationToken;
+    const startRects = new Map();
+    plan.transitions.forEach((transition) => {
+      const element = tileElements.get(transition.id);
+      if (element) startRects.set(transition.id, element.getBoundingClientRect());
+    });
+
+    plan.transitions.forEach((transition) => {
+      const element = tileElements.get(transition.id);
+      if (element) placeElement(element, transition.toPosition);
+    });
+
+    plan.transitions.forEach((transition) => {
+      const element = tileElements.get(transition.id);
+      const startRect = startRects.get(transition.id);
+      if (!element || !startRect) return;
+      const endRect = element.getBoundingClientRect();
+      element.style.transition = "none";
+      element.style.transform = "translate3d(" + (startRect.left - endRect.left) + "px, " + (startRect.top - endRect.top) + "px, 0)";
+    });
+
+    tileLayer.getBoundingClientRect();
+    root.requestAnimationFrame(() => {
+      if (token !== animationToken) return;
+      plan.transitions.forEach((transition) => {
+        const element = tileElements.get(transition.id);
+        if (!element) return;
+        element.style.transition = "transform " + MOVE_DURATION + "ms cubic-bezier(0.2, 0.82, 0.28, 1)";
+        element.style.transform = "translate3d(0, 0, 0)";
+      });
+    });
+
+    settleTimer = root.setTimeout(() => finishMove(plan, token), MOVE_DURATION + 20);
+  }
+
+  function handleMove(direction) {
+    if (animating || !resultOverlay.classList.contains("is-hidden")) return;
+    const plan = planTileMove(tiles, direction, 4, createId);
+    if (!plan.moved) return;
+    animateMove(plan);
+  }
+
+  function initializeBoard() {
+    boardElement.replaceChildren();
+    const background = document.createElement("div");
+    background.className = "merge-grid-background";
+    for (let index = 0; index < 16; index += 1) {
+      const cell = document.createElement("div");
+      cell.className = "merge-grid-cell";
+      background.appendChild(cell);
+    }
+    tileLayer = document.createElement("div");
+    tileLayer.className = "merge-tile-layer";
+    boardElement.append(background, tileLayer);
+  }
+
   function newGame() {
-    board = addRandomTile(addRandomTile(Array(16).fill(0)));
+    animationToken += 1;
+    root.clearTimeout(settleTimer);
+    animating = false;
+    nextId = 1;
+    tiles = [];
+    tileElements = new Map();
+    resultOverlay.classList.add("is-hidden");
+    initializeBoard();
+    addRandomGameTile();
+    addRandomGameTile();
     score = 0;
     moves = 0;
     wonShown = false;
-    resultOverlay.classList.add("is-hidden");
-    render();
+    reconcileTiles();
+    renderStatus();
   }
 
   document.querySelectorAll("[data-direction]").forEach((button) => {
@@ -186,18 +359,10 @@
   });
   document.addEventListener("keydown", (event) => {
     const directions = {
-      ArrowUp: "up",
-      w: "up",
-      W: "up",
-      ArrowDown: "down",
-      s: "down",
-      S: "down",
-      ArrowLeft: "left",
-      a: "left",
-      A: "left",
-      ArrowRight: "right",
-      d: "right",
-      D: "right",
+      ArrowUp: "up", w: "up", W: "up",
+      ArrowDown: "down", s: "down", S: "down",
+      ArrowLeft: "left", a: "left", A: "left",
+      ArrowRight: "right", d: "right", D: "right",
     };
     if (directions[event.key]) {
       event.preventDefault();
