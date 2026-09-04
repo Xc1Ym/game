@@ -5,6 +5,15 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outputDirectory = resolve(projectRoot, "assets/fruits");
+const clearMargins = {
+  blueberries: { top: 18, bottom: 40 },
+  grapes: { top: 2, bottom: 16 },
+  kiwi: { bottom: 22 },
+  peach: { top: 16 },
+  pineapple: { bottom: 18 },
+  strawberry: { bottom: 22 },
+  watermelon: { bottom: 30 },
+};
 const atlases = [
   {
     file: "fruit-atlas.png",
@@ -35,12 +44,20 @@ atlases.forEach((atlas) => {
   atlas.names.forEach((name, index) => {
     const row = Math.floor(index / atlas.columns);
     const column = index % atlas.columns;
+    const margin = clearMargins[name] || {};
+    const top = margin.top || 0;
+    const bottom = margin.bottom || 0;
+    const baseCrop = `crop=iw/${atlas.columns}:ih/${atlas.rows}:${column}*iw/${atlas.columns}:${row}*ih/${atlas.rows}`;
+    const edgeCleanup = top || bottom
+      ? `,crop=iw:ih-${top + bottom}:0:${top},pad=iw:ih:0:${top}:color=black@0`
+      : "";
     execFileSync("ffmpeg", [
       "-loglevel", "error",
       "-y",
       "-i", atlasPath,
-      "-vf", `crop=iw/${atlas.columns}:ih/${atlas.rows}:${column}*iw/${atlas.columns}:${row}*ih/${atlas.rows}`,
+      "-vf", baseCrop + edgeCleanup,
       "-frames:v", "1",
+      "-pix_fmt", "rgba",
       resolve(outputDirectory, `${name}.png`),
     ]);
   });

@@ -2,7 +2,7 @@
 
 .catch-field {
   position: relative;
-  height: clamp(400px, 58vh, 560px);
+  height: clamp(480px, 68vh, 680px);
   overflow: hidden;
   background:
     linear-gradient(transparent 75%, rgba(92, 139, 65, 0.16)),
@@ -110,7 +110,7 @@
 }
 
 @media (max-width: 620px) {
-  .catch-field { height: min(54vh, 500px); min-height: 380px; }
+  .catch-field { height: min(64svh, 620px); min-height: 460px; }
   .catcher { width: 96px; height: 50px; bottom: 18px; }
   .orchard-line { bottom: 74px; }
   .catch-controls { grid-template-columns: 62px 1fr 62px; }

@@ -20,10 +20,13 @@
   if (!document) return api;
 
   const LEVELS = {
-    easy: { spawnEvery: 880, speedMin: 125, speedMax: 185, badChance: 0.12 },
-    normal: { spawnEvery: 690, speedMin: 165, speedMax: 245, badChance: 0.17 },
-    hard: { spawnEvery: 520, speedMin: 220, speedMax: 330, badChance: 0.22 },
+    easy: { spawnEvery: 1000, speedMin: 82, speedMax: 118, badChance: 0.12 },
+    normal: { spawnEvery: 820, speedMin: 110, speedMax: 155, badChance: 0.17 },
+    hard: { spawnEvery: 660, speedMin: 145, speedMax: 205, badChance: 0.22 },
   };
+  const BASKET_ACCELERATION = 2800;
+  const BASKET_MAX_SPEED = 760;
+  const BASKET_FRICTION = 9;
   const DURATION = 60;
   const FRUITS = ["apple", "banana", "blueberries", "cherries", "grapes", "kiwi", "lemon", "mango", "orange", "peach", "pear", "pineapple", "strawberry", "watermelon"];
 
@@ -46,6 +49,7 @@
   let items = [];
   let basketX = 0;
   let targetBasketX = 0;
+  let basketVelocity = 0;
   let score = 0;
   let combo = 0;
   let maxCombo = 0;
@@ -106,14 +110,37 @@
   }
 
   function moveBasket(step) {
-    setBasketTarget(targetBasketX + step * Math.max(64, field.clientWidth * 0.09));
+    basketVelocity = clamp(
+      basketVelocity + step * Math.max(300, field.clientWidth * 0.45),
+      -BASKET_MAX_SPEED,
+      BASKET_MAX_SPEED,
+    );
   }
 
   function updateBasket(deltaSeconds) {
     const direction = Number(rightPressed) - Number(leftPressed);
-    if (direction) setBasketTarget(targetBasketX + direction * 540 * deltaSeconds);
-    basketX = smoothPosition(basketX, targetBasketX, dragging ? 30 : 20, deltaSeconds);
-    if (Math.abs(basketX - targetBasketX) < 0.05) basketX = targetBasketX;
+    if (dragging) {
+      basketVelocity = 0;
+      basketX = smoothPosition(basketX, targetBasketX, 58, deltaSeconds);
+      if (Math.abs(basketX - targetBasketX) < 0.05) basketX = targetBasketX;
+    } else {
+      if (direction) {
+        if (basketVelocity && Math.sign(basketVelocity) !== direction) basketVelocity *= Math.exp(-16 * deltaSeconds);
+        basketVelocity += direction * BASKET_ACCELERATION * deltaSeconds;
+      } else {
+        basketVelocity *= Math.exp(-BASKET_FRICTION * deltaSeconds);
+        if (Math.abs(basketVelocity) < 1) basketVelocity = 0;
+      }
+      basketVelocity = clamp(basketVelocity, -BASKET_MAX_SPEED, BASKET_MAX_SPEED);
+      basketX += basketVelocity * deltaSeconds;
+      targetBasketX = basketX;
+    }
+
+    const limits = basketLimits();
+    const boundedX = clamp(basketX, limits.minimum, limits.maximum);
+    if (boundedX !== basketX) basketVelocity = 0;
+    basketX = boundedX;
+    targetBasketX = clamp(targetBasketX, limits.minimum, limits.maximum);
     applyBasketPosition();
   }
 
@@ -252,6 +279,7 @@
     elapsed = 0;
     spawnElapsed = config.spawnEvery * 0.45;
     lastTime = 0;
+    basketVelocity = 0;
     active = true;
     paused = false;
     setBasketPercent(50, true);
@@ -276,7 +304,17 @@
 
   function moveFromPointer(event) {
     const bounds = field.getBoundingClientRect();
-    setBasketTarget(event.clientX - bounds.left);
+    const samples = typeof event.getCoalescedEvents === "function" ? event.getCoalescedEvents() : [];
+    const latest = samples.length ? samples[samples.length - 1] : event;
+    setBasketTarget(latest.clientX - bounds.left, !active || paused);
+  }
+
+  function finishDragging() {
+    if (!dragging) return;
+    dragging = false;
+    basketX = targetBasketX;
+    basketVelocity = 0;
+    applyBasketPosition();
   }
 
   field.addEventListener("pointerdown", (event) => {
@@ -288,8 +326,9 @@
   field.addEventListener("pointermove", (event) => {
     if (dragging) moveFromPointer(event);
   });
-  field.addEventListener("pointerup", () => { dragging = false; });
-  field.addEventListener("pointercancel", () => { dragging = false; });
+  field.addEventListener("pointerup", finishDragging);
+  field.addEventListener("pointercancel", finishDragging);
+  field.addEventListener("lostpointercapture", finishDragging);
 
   document.querySelectorAll("[data-move]").forEach((button) => {
     const direction = Number(button.dataset.move);
@@ -318,6 +357,11 @@
   document.addEventListener("keyup", (event) => {
     if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") leftPressed = false;
     if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") rightPressed = false;
+  });
+  root.addEventListener("blur", () => {
+    dragging = false;
+    leftPressed = false;
+    rightPressed = false;
   });
   root.addEventListener("resize", () => {
     const limits = basketLimits();
