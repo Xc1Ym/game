@@ -8,11 +8,11 @@ const homepage = readFileSync(join(root, "index.html"), "utf8");
 const game = readFileSync(join(root, "games/link-link/index.html"), "utf8");
 const { directionForKey, wrapIndex } = require("../home.js");
 
-test("arcade homepage exposes all four playable games", () => {
-  ["水果连连看", "果园扫雷", "接水果", "水果合成"].forEach((name) => assert.match(homepage, new RegExp(name)));
-  assert.equal((homepage.match(/role="option"/g) || []).length, 4);
-  assert.equal((homepage.match(/<a\s+class="arcade-game/g) || []).length, 4);
-  assert.equal((homepage.match(/class="menu-state is-live"/g) || []).length, 4);
+test("arcade homepage exposes all seven playable games", () => {
+  ["水果连连看", "果园扫雷", "接水果", "水果合成", "水果贪吃蛇", "水果泡泡龙", "水果方块"].forEach((name) => assert.match(homepage, new RegExp(name)));
+  assert.equal((homepage.match(/role="option"/g) || []).length, 7);
+  assert.equal((homepage.match(/<a\s+class="arcade-game/g) || []).length, 7);
+  assert.equal((homepage.match(/class="menu-state is-live"/g) || []).length, 7);
   assert.match(homepage, /id="joystick"/);
   assert.match(homepage, /id="startButton"/);
 });
@@ -33,8 +33,8 @@ test("relocated link-link game resolves its local assets and returns home", () =
 });
 
 test("arcade selection wraps and supports arrow or WASD controls", () => {
-  assert.equal(wrapIndex(-1, 4), 3);
-  assert.equal(wrapIndex(4, 4), 0);
+  assert.equal(wrapIndex(-1, 7), 6);
+  assert.equal(wrapIndex(7, 7), 0);
   assert.equal(directionForKey("ArrowUp"), -1);
   assert.equal(directionForKey("W"), -1);
   assert.equal(directionForKey("ArrowDown"), 1);
@@ -43,7 +43,7 @@ test("arcade selection wraps and supports arrow or WASD controls", () => {
 
 test("every arcade route resolves to a complete game page", () => {
   const routes = [...homepage.matchAll(/data-href="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(routes, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/"]);
+  assert.deepEqual(routes, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/", "games/snake/", "games/bubbles/", "games/blocks/"]);
   routes.forEach((route) => {
     const gameDirectory = join(root, route);
     const gamePage = join(gameDirectory, "index.html");
@@ -57,5 +57,12 @@ test("every arcade route resolves to a complete game page", () => {
 
 test("every PLAY item is a native one-click link", () => {
   const links = [...homepage.matchAll(/href="(games\/[^"]+\/)"[\s\S]*?data-href="\1"/g)].map((match) => match[1]);
-  assert.deepEqual(links, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/"]);
+  assert.deepEqual(links, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/", "games/snake/", "games/bubbles/", "games/blocks/"]);
+});
+
+test("arcade START button receives the browser root used for navigation", () => {
+  const script = readFileSync(join(root, "home.js"), "utf8");
+  assert.match(script, /factory\(root, root\.document\)/);
+  assert.match(script, /function createArcade\(root, document\)/);
+  assert.match(script, /root\.location\.assign\(selected\.dataset\.href\)/);
 });

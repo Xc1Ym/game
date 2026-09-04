@@ -1,8 +1,8 @@
 (function initArcade(root, factory) {
-  const api = factory(root.document);
+  const api = factory(root, root.document);
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.OrchardArcade = api;
-})(typeof globalThis !== "undefined" ? globalThis : this, function createArcade(document) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function createArcade(root, document) {
   function wrapIndex(index, length) {
     if (length <= 0) return 0;
     return ((index % length) + length) % length;

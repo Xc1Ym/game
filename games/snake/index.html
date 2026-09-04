@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#174936" />
+    <meta name="description" content="在果园中控制贪吃蛇收集水果，挑战更长的蛇身。" />
+    <title>水果贪吃蛇｜果园街机厅</title>
+    <link rel="stylesheet" href="../shared.css" />
+    <link rel="stylesheet" href="snake.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="game-header">
+        <a class="back-home" href="../../">← 街机厅</a>
+        <div class="game-brand">
+          <img src="../../assets/fruits/apple.png" alt="" />
+          <div><p class="eyebrow">FRUIT SNAKE</p><h1>水果贪吃蛇</h1></div>
+        </div>
+        <button class="header-action" id="pauseButton" type="button" disabled>暂停</button>
+      </header>
+
+      <section class="game-toolbar" aria-label="贪吃蛇设置">
+        <div class="difficulty-group" role="group" aria-label="选择速度">
+          <button class="difficulty-button" type="button" data-level="easy">悠闲</button>
+          <button class="difficulty-button is-active" type="button" data-level="normal">进阶</button>
+          <button class="difficulty-button" type="button" data-level="hard">挑战</button>
+        </div>
+        <button class="primary-button" id="newGameButton" type="button">开始游戏</button>
+      </section>
+
+      <section class="status-strip" aria-label="本局状态">
+        <div class="status-box"><span>积分</span><strong id="score">0</strong></div>
+        <div class="status-box"><span>长度</span><strong id="snakeLength">4</strong></div>
+        <div class="status-box"><span>速度</span><strong id="speedLabel">进阶</strong></div>
+        <div class="status-box"><span>本机最佳</span><strong id="bestScore">0</strong></div>
+      </section>
+
+      <section class="game-panel snake-panel">
+        <canvas id="snakeCanvas" width="720" height="720" aria-label="水果贪吃蛇游戏区域"></canvas>
+        <div class="result-overlay" id="resultOverlay">
+          <div class="result-card">
+            <img id="resultImage" src="../../assets/fruits/apple.png" alt="" />
+            <h2 id="resultTitle">准备出发</h2>
+            <p id="resultMessage">使用方向键、WASD 或滑动果园控制方向，吃到水果就会变长。</p>
+            <button class="primary-button" id="overlayButton" type="button">开始</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="snake-controls" role="group" aria-label="控制贪吃蛇方向">
+        <button type="button" data-direction="up" aria-label="向上">↑</button>
+        <button type="button" data-direction="left" aria-label="向左">←</button>
+        <span>滑动果园<br />或使用方向键</span>
+        <button type="button" data-direction="right" aria-label="向右">→</button>
+        <button type="button" data-direction="down" aria-label="向下">↓</button>
+      </div>
+    </main>
+    <script src="snake.js"></script>
+  </body>
+</html>

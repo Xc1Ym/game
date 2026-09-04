@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#174936" />
+    <meta name="description" content="水果主题俄罗斯方块，旋转、堆叠并消除完整果盘。" />
+    <title>水果方块｜果园街机厅</title>
+    <link rel="stylesheet" href="../shared.css" />
+    <link rel="stylesheet" href="blocks.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="game-header">
+        <a class="back-home" href="../../">← 街机厅</a>
+        <div class="game-brand">
+          <img src="../../assets/fruits/starfruit.png" alt="" />
+          <div><p class="eyebrow">FRUIT BLOCKS</p><h1>水果方块</h1></div>
+        </div>
+        <button class="header-action" id="pauseButton" type="button" disabled>暂停</button>
+      </header>
+
+      <section class="game-toolbar" aria-label="水果方块设置">
+        <div class="difficulty-group" role="group" aria-label="选择速度">
+          <button class="difficulty-button" type="button" data-level="easy">悠闲</button>
+          <button class="difficulty-button is-active" type="button" data-level="normal">进阶</button>
+          <button class="difficulty-button" type="button" data-level="hard">挑战</button>
+        </div>
+        <button class="primary-button" id="newGameButton" type="button">开始游戏</button>
+      </section>
+
+      <section class="status-strip" aria-label="本局状态">
+        <div class="status-box"><span>积分</span><strong id="score">0</strong></div>
+        <div class="status-box"><span>消除行数</span><strong id="lines">0</strong></div>
+        <div class="status-box"><span>等级</span><strong id="gameLevel">1</strong></div>
+        <div class="status-box"><span>本机最佳</span><strong id="bestScore">0</strong></div>
+      </section>
+
+      <section class="game-panel blocks-panel">
+        <canvas id="blocksCanvas" width="500" height="800" aria-label="水果俄罗斯方块游戏区域"></canvas>
+        <div class="result-overlay" id="resultOverlay">
+          <div class="result-card">
+            <img id="resultImage" src="../../assets/fruits/starfruit.png" alt="" />
+            <h2 id="resultTitle">装满果盘</h2>
+            <p id="resultMessage">使用方向键移动，向上旋转，空格直接落下；手机可以滑动或轻点。</p>
+            <button class="primary-button" id="overlayButton" type="button">开始</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="blocks-controls" role="group" aria-label="控制水果方块">
+        <button type="button" data-action="left" aria-label="向左">←</button>
+        <button type="button" data-action="rotate" aria-label="旋转">↻</button>
+        <button class="drop-button" type="button" data-action="drop">落下</button>
+        <button type="button" data-action="down" aria-label="加速下降">↓</button>
+        <button type="button" data-action="right" aria-label="向右">→</button>
+      </div>
+      <p class="game-help">方向键移动与旋转，空格硬降；手机轻点旋转、滑动移动。</p>
+    </main>
+    <script src="blocks.js"></script>
+  </body>
+</html>

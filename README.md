@@ -12,7 +12,7 @@ npm start
 
 然后访问终端显示的 `http://127.0.0.1:4173`。
 
-四款游戏分别位于 `games/link-link/`、`games/mines/`、`games/catcher/` 和 `games/merge/`，从街机首页可直接进入；排行榜与最佳成绩使用同一域名的浏览器存储。
+七款游戏分别位于 `games/link-link/`、`games/mines/`、`games/catcher/`、`games/merge/`、`games/snake/`、`games/bubbles/` 和 `games/blocks/`，从街机首页可直接进入；排行榜与最佳成绩使用同一域名的浏览器存储。
 
 ## 测试
 

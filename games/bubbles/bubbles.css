@@ -1,0 +1,45 @@
+.bubble-panel {
+  width: min(100%, 640px);
+  margin: 0 auto;
+  background: #dff1df;
+  border-color: #bad8ba;
+}
+
+#bubbleCanvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 19;
+  background: #dff1df;
+  touch-action: none;
+  user-select: none;
+}
+
+.bubble-controls {
+  display: grid;
+  width: min(100%, 430px);
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 9px;
+  margin: 12px auto 0;
+}
+.bubble-controls button {
+  min-height: 52px;
+  color: #fff;
+  cursor: pointer;
+  background: var(--forest);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 5px 0 var(--forest-dark);
+  font-size: 1.25rem;
+  font-weight: 900;
+  touch-action: manipulation;
+}
+.bubble-controls .shoot-button {
+  background: linear-gradient(135deg, #f28a3e, var(--orange));
+  box-shadow: 0 5px 0 #b94c1e;
+  font-size: 1rem;
+}
+.bubble-controls button:active { box-shadow: 0 2px 0 var(--forest-dark); transform: translateY(3px); }
+
+@media (max-width: 620px) {
+  .bubble-controls button { min-height: 48px; }
+}

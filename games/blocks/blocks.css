@@ -1,0 +1,42 @@
+.blocks-panel {
+  width: min(100%, 500px);
+  margin: 0 auto;
+  background: #dff1df;
+  border-color: #bad8ba;
+}
+
+#blocksCanvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 5 / 8;
+  background: #dff1df;
+  touch-action: none;
+  user-select: none;
+}
+
+.blocks-controls {
+  display: grid;
+  width: min(100%, 560px);
+  grid-template-columns: repeat(5, minmax(52px, 1fr));
+  gap: 7px;
+  margin: 12px auto 0;
+}
+.blocks-controls button {
+  min-height: 52px;
+  color: #fff;
+  cursor: pointer;
+  background: var(--forest);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 5px 0 var(--forest-dark);
+  font-size: 1.25rem;
+  font-weight: 900;
+  touch-action: manipulation;
+}
+.blocks-controls .drop-button { background: linear-gradient(135deg, #f28a3e, var(--orange)); box-shadow: 0 5px 0 #b94c1e; font-size: 0.92rem; }
+.blocks-controls button:active { box-shadow: 0 2px 0 var(--forest-dark); transform: translateY(3px); }
+
+@media (max-width: 620px) {
+  .blocks-controls { gap: 4px; }
+  .blocks-controls button { min-height: 47px; }
+}
