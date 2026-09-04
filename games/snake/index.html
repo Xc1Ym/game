@@ -22,8 +22,8 @@
 
       <section class="game-toolbar" aria-label="贪吃蛇设置">
         <div class="difficulty-group" role="group" aria-label="选择速度">
-          <button class="difficulty-button" type="button" data-level="easy">悠闲</button>
-          <button class="difficulty-button is-active" type="button" data-level="normal">进阶</button>
+          <button class="difficulty-button is-active" type="button" data-level="easy">悠闲</button>
+          <button class="difficulty-button" type="button" data-level="normal">进阶</button>
           <button class="difficulty-button" type="button" data-level="hard">挑战</button>
         </div>
         <button class="primary-button" id="newGameButton" type="button">开始游戏</button>
@@ -32,7 +32,7 @@
       <section class="status-strip" aria-label="本局状态">
         <div class="status-box"><span>积分</span><strong id="score">0</strong></div>
         <div class="status-box"><span>长度</span><strong id="snakeLength">4</strong></div>
-        <div class="status-box"><span>速度</span><strong id="speedLabel">进阶</strong></div>
+        <div class="status-box"><span>速度</span><strong id="speedLabel">悠闲</strong></div>
         <div class="status-box"><span>本机最佳</span><strong id="bestScore">0</strong></div>
       </section>
 
@@ -42,7 +42,7 @@
           <div class="result-card">
             <img id="resultImage" src="../../assets/fruits/apple.png" alt="" />
             <h2 id="resultTitle">准备出发</h2>
-            <p id="resultMessage">使用方向键、WASD 或滑动果园控制方向，吃到水果就会变长。</p>
+            <p id="resultMessage">悠闲模式速度更舒缓；支持连续预输入两个转向，吃到水果就会变长。</p>
             <button class="primary-button" id="overlayButton" type="button">开始</button>
           </div>
         </div>

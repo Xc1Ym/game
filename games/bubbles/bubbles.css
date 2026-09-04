@@ -10,6 +10,7 @@
   width: 100%;
   aspect-ratio: 16 / 19;
   background: #dff1df;
+  contain: paint;
   touch-action: none;
   user-select: none;
 }
@@ -31,7 +32,9 @@
   box-shadow: 0 5px 0 var(--forest-dark);
   font-size: 1.25rem;
   font-weight: 900;
+  transition: transform 90ms ease, box-shadow 90ms ease;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .bubble-controls .shoot-button {
   background: linear-gradient(135deg, #f28a3e, var(--orange));

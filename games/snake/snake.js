@@ -10,12 +10,35 @@
     right: { x: 1, y: 0 },
   };
 
+  const LEVELS = {
+    easy: { label: "悠闲", step: 245, minimumStep: 210, acceleration: 0 },
+    normal: { label: "进阶", step: 180, minimumStep: 140, acceleration: 2 },
+    hard: { label: "挑战", step: 82, minimumStep: 56, acceleration: 4 },
+  };
+
   function sameCell(first, second) {
     return first.x === second.x && first.y === second.y;
   }
 
   function isOpposite(first, second) {
     return first.x + second.x === 0 && first.y + second.y === 0;
+  }
+
+  function sameDirection(first, second) {
+    return first.x === second.x && first.y === second.y;
+  }
+
+  function queueDirection(queue, current, next, limit = 2) {
+    if (!next || queue.length >= limit) return queue.slice();
+    const previous = queue[queue.length - 1] || current;
+    if (sameDirection(previous, next) || isOpposite(previous, next)) return queue.slice();
+    return [...queue, next];
+  }
+
+  function snakeStep(level, length) {
+    const config = LEVELS[level] || LEVELS.normal;
+    const speedUp = Math.floor(Math.max(0, length - 4) / 5) * config.acceleration;
+    return Math.max(config.minimumStep, config.step - speedUp);
   }
 
   function advanceSnake(snake, direction, food, columns, rows) {
@@ -30,14 +53,8 @@
     return { snake: next, ate, crashed: false };
   }
 
-  const api = { DIRECTIONS, sameCell, isOpposite, advanceSnake };
+  const api = { DIRECTIONS, LEVELS, sameCell, isOpposite, queueDirection, snakeStep, advanceSnake };
   if (!document) return api;
-
-  const LEVELS = {
-    easy: { label: "悠闲", step: 175 },
-    normal: { label: "进阶", step: 125 },
-    hard: { label: "挑战", step: 88 },
-  };
   const FRUITS = ["apple", "strawberry", "orange", "pear", "grapes", "cherries"];
   const COLUMNS = 18;
   const ROWS = 18;
@@ -62,11 +79,11 @@
     fruitImages.set(name, image);
   });
 
-  let level = "normal";
+  let level = "easy";
   let snake = [];
   let previousSnake = [];
   let direction = DIRECTIONS.right;
-  let queuedDirection = DIRECTIONS.right;
+  let directionQueue = [];
   let food = { x: 12, y: 9, type: "apple" };
   let score = 0;
   let active = false;
@@ -77,6 +94,46 @@
   let particles = [];
   let eatPulse = 0;
   let touchStart = null;
+  let countdown = 0;
+
+  const backgroundCanvas = document.createElement("canvas");
+  backgroundCanvas.width = canvas.width;
+  backgroundCanvas.height = canvas.height;
+  const backgroundContext = backgroundCanvas.getContext("2d");
+  backgroundContext.fillStyle = "#dff1df";
+  backgroundContext.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+  backgroundContext.strokeStyle = "rgba(51, 105, 66, 0.09)";
+  backgroundContext.lineWidth = 1;
+  const backgroundCell = backgroundCanvas.width / COLUMNS;
+  for (let index = 1; index < COLUMNS; index += 1) {
+    backgroundContext.beginPath(); backgroundContext.moveTo(index * backgroundCell, 0); backgroundContext.lineTo(index * backgroundCell, backgroundCanvas.height); backgroundContext.stroke();
+    backgroundContext.beginPath(); backgroundContext.moveTo(0, index * backgroundCell); backgroundContext.lineTo(backgroundCanvas.width, index * backgroundCell); backgroundContext.stroke();
+  }
+
+  function makeSegmentSprite(startColor, endColor, inset) {
+    const sprite = document.createElement("canvas");
+    sprite.width = backgroundCell;
+    sprite.height = backgroundCell;
+    const spriteContext = sprite.getContext("2d");
+    const size = backgroundCell - inset * 2;
+    const gradient = spriteContext.createLinearGradient(0, 0, backgroundCell, backgroundCell);
+    gradient.addColorStop(0, startColor);
+    gradient.addColorStop(1, endColor);
+    spriteContext.fillStyle = gradient;
+    spriteContext.beginPath();
+    spriteContext.roundRect(inset, inset, size, size, backgroundCell * 0.3);
+    spriteContext.fill();
+    spriteContext.strokeStyle = "rgba(255,255,220,0.3)";
+    spriteContext.lineWidth = 2;
+    spriteContext.stroke();
+    return sprite;
+  }
+
+  const segmentSprites = {
+    head: makeSegmentSprite("#75bd59", "#2f7547", 2.4),
+    light: makeSegmentSprite("#5aa852", "#286543", 4.2),
+    dark: makeSegmentSprite("#4c9a59", "#286543", 4.2),
+  };
 
   function readBest() {
     try { return Number(root.localStorage.getItem("orchard-snake-best-" + level)) || 0; } catch { return 0; }
@@ -119,12 +176,11 @@
 
   function setDirection(name) {
     const next = DIRECTIONS[name];
-    if (!next || isOpposite(next, direction)) return;
-    queuedDirection = next;
+    directionQueue = queueDirection(directionQueue, direction, next);
   }
 
   function stepGame() {
-    direction = queuedDirection;
+    if (directionQueue.length) direction = directionQueue.shift();
     previousSnake = snake.map((cell) => ({ ...cell }));
     const result = advanceSnake(snake, direction, food, COLUMNS, ROWS);
     if (result.crashed) {
@@ -142,22 +198,10 @@
     }
   }
 
-  function roundedRect(x, y, width, height, radius) {
-    context.beginPath();
-    context.roundRect(x, y, width, height, radius);
-  }
-
   function render(timestamp, interpolation) {
     const cell = canvas.width / COLUMNS;
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#dff1df";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = "rgba(51, 105, 66, 0.09)";
-    context.lineWidth = 1;
-    for (let index = 1; index < COLUMNS; index += 1) {
-      context.beginPath(); context.moveTo(index * cell, 0); context.lineTo(index * cell, canvas.height); context.stroke();
-      context.beginPath(); context.moveTo(0, index * cell); context.lineTo(canvas.width, index * cell); context.stroke();
-    }
+    context.drawImage(backgroundCanvas, 0, 0);
 
     const foodImage = fruitImages.get(food.type);
     const foodScale = 0.86 + Math.sin(timestamp / 150) * 0.055 + eatPulse * 0.08;
@@ -174,20 +218,8 @@
       const previous = previousSnake[Math.min(index, previousSnake.length - 1)] || current;
       const x = (previous.x + (current.x - previous.x) * interpolation) * cell;
       const y = (previous.y + (current.y - previous.y) * interpolation) * cell;
-      const inset = index === 0 ? 2.4 : 4.2;
-      const size = cell - inset * 2;
-      const gradient = context.createLinearGradient(x, y, x + cell, y + cell);
-      gradient.addColorStop(0, index === 0 ? "#75bd59" : index % 2 ? "#4c9a59" : "#5aa852");
-      gradient.addColorStop(1, index === 0 ? "#2f7547" : "#286543");
-      context.fillStyle = gradient;
-      context.shadowColor = "rgba(26, 73, 48, 0.2)";
-      context.shadowBlur = index === 0 ? 8 : 3;
-      roundedRect(x + inset, y + inset, size, size, cell * 0.3);
-      context.fill();
-      context.shadowBlur = 0;
-      context.strokeStyle = "rgba(255,255,220,0.3)";
-      context.lineWidth = 2;
-      context.stroke();
+      const sprite = index === 0 ? segmentSprites.head : index % 2 ? segmentSprites.dark : segmentSprites.light;
+      context.drawImage(sprite, x, y, cell, cell);
 
       if (index === 0) {
         const centerX = x + cell / 2;
@@ -219,6 +251,21 @@
       context.fill();
     });
     context.globalAlpha = 1;
+
+    if (countdown > 0) {
+      const count = Math.max(1, Math.ceil(countdown / 400));
+      context.save();
+      context.fillStyle = "rgba(23, 73, 54, 0.82)";
+      context.beginPath();
+      context.arc(canvas.width / 2, canvas.height / 2, 58, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#fff9dc";
+      context.font = "900 54px sans-serif";
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText(String(count), canvas.width / 2, canvas.height / 2 + 2);
+      context.restore();
+    }
   }
 
   function loop(timestamp) {
@@ -236,7 +283,15 @@
     });
     particles = particles.filter((particle) => particle.life > 0);
 
-    const step = Math.max(62, LEVELS[level].step - Math.floor((snake.length - 4) / 5) * 4);
+    if (countdown > 0) {
+      countdown = Math.max(0, countdown - delta);
+      accumulator = 0;
+      render(timestamp, 0);
+      frameId = root.requestAnimationFrame(loop);
+      return;
+    }
+
+    const step = snakeStep(level, snake.length);
     while (accumulator >= step && active) {
       accumulator -= step;
       stepGame();
@@ -250,12 +305,13 @@
     snake = [{ x: 7, y: 9 }, { x: 6, y: 9 }, { x: 5, y: 9 }, { x: 4, y: 9 }];
     previousSnake = snake.map((cell) => ({ ...cell }));
     direction = DIRECTIONS.right;
-    queuedDirection = DIRECTIONS.right;
+    directionQueue = [];
     food = randomFood();
     score = 0;
     particles = [];
     accumulator = 0;
     lastTime = 0;
+    countdown = 1200;
     active = true;
     paused = false;
     resultOverlay.classList.add("is-hidden");

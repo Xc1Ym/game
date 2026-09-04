@@ -99,12 +99,34 @@
   const overlayButton = document.getElementById("overlayButton");
   const difficultyButtons = Array.from(document.querySelectorAll(".difficulty-button"));
   const images = new Map();
+  const bubbleSprites = new Map();
 
   FRUITS.forEach((fruit) => {
     const image = new Image();
+    image.addEventListener("load", () => cacheFruitBubble(fruit));
     image.src = "../../assets/fruits/" + fruit.type + ".png";
     images.set(fruit.type, image);
   });
+
+  const backgroundCanvas = document.createElement("canvas");
+  backgroundCanvas.width = canvas.width;
+  backgroundCanvas.height = canvas.height;
+  const backgroundContext = backgroundCanvas.getContext("2d");
+  backgroundContext.fillStyle = "#dff1df";
+  backgroundContext.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+  backgroundContext.fillStyle = "rgba(76,154,89,0.08)";
+  for (let x = 20; x < backgroundCanvas.width; x += 56) {
+    backgroundContext.beginPath();
+    backgroundContext.arc(x, 120 + Math.sin(x) * 16, 38, 0, Math.PI * 2);
+    backgroundContext.fill();
+  }
+  backgroundContext.strokeStyle = "rgba(47,111,77,0.18)";
+  backgroundContext.lineWidth = 3;
+  backgroundContext.setLineDash([8, 8]);
+  backgroundContext.beginPath();
+  backgroundContext.moveTo(0, Y_START + (ROWS - 2) * Y_STEP + RADIUS);
+  backgroundContext.lineTo(backgroundCanvas.width, Y_START + (ROWS - 2) * Y_STEP + RADIUS);
+  backgroundContext.stroke();
 
   let level = "normal";
   let config = LEVELS[level];
@@ -113,6 +135,7 @@
   let nextType = "lemon";
   let projectile = null;
   let angle = -Math.PI / 2;
+  let targetAngle = angle;
   let score = 0;
   let combo = 0;
   let maxCombo = 0;
@@ -124,6 +147,36 @@
   let pops = [];
   let drops = [];
   let recoil = 0;
+  let projectileTrail = [];
+
+  function cacheFruitBubble(fruit) {
+    const sprite = document.createElement("canvas");
+    const size = 72;
+    const center = size / 2;
+    const spriteContext = sprite.getContext("2d");
+    sprite.width = size;
+    sprite.height = size;
+    const gradient = spriteContext.createRadialGradient(center - 10, center - 12, 2, center, center, 32);
+    gradient.addColorStop(0, "#fffbe9");
+    gradient.addColorStop(0.2, fruit.color);
+    gradient.addColorStop(1, "#315f48");
+    spriteContext.fillStyle = gradient;
+    spriteContext.shadowColor = "rgba(33, 72, 49, 0.24)";
+    spriteContext.shadowBlur = 8;
+    spriteContext.shadowOffsetY = 4;
+    spriteContext.beginPath();
+    spriteContext.arc(center, center - 2, RADIUS, 0, Math.PI * 2);
+    spriteContext.fill();
+    spriteContext.shadowBlur = 0;
+    spriteContext.strokeStyle = "rgba(255,255,255,0.65)";
+    spriteContext.lineWidth = 2;
+    spriteContext.stroke();
+    const image = images.get(fruit.type);
+    if (image?.complete && image.naturalWidth) spriteContext.drawImage(image, center - 20, center - 22, 40, 40);
+    bubbleSprites.set(fruit.type, sprite);
+  }
+
+  FRUITS.forEach(cacheFruitBubble);
 
   function makeGrid() {
     return Array.from({ length: ROWS }, () => Array(COLUMNS).fill(null));
@@ -245,6 +298,7 @@
     if (!active || paused || projectile) return;
     const speed = 700;
     projectile = { x: LAUNCHER.x, y: LAUNCHER.y - 18, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, type: currentType, rotation: 0 };
+    projectileTrail = [];
     currentType = nextType;
     nextType = randomType();
     recoil = 1;
@@ -252,50 +306,42 @@
 
   function updateProjectile(deltaSeconds) {
     if (!projectile) return;
-    projectile.x += projectile.vx * deltaSeconds;
-    projectile.y += projectile.vy * deltaSeconds;
-    projectile.rotation += deltaSeconds * 3;
-    if (projectile.x <= RADIUS) { projectile.x = RADIUS; projectile.vx = Math.abs(projectile.vx); }
-    if (projectile.x >= canvas.width - RADIUS) { projectile.x = canvas.width - RADIUS; projectile.vx = -Math.abs(projectile.vx); }
-    let collided = projectile.y <= RADIUS;
-    if (!collided) {
-      for (let row = 0; row < ROWS && !collided; row += 1) {
-        for (let column = 0; column < COLUMNS; column += 1) {
-          if (!grid[row][column]) continue;
-          const position = cellPosition(row, column);
-          if ((position.x - projectile.x) ** 2 + (position.y - projectile.y) ** 2 <= (RADIUS * 1.85) ** 2) {
-            collided = true;
-            break;
+    projectileTrail.push({ x: projectile.x, y: projectile.y, type: projectile.type, rotation: projectile.rotation, life: 1 });
+    if (projectileTrail.length > 6) projectileTrail.shift();
+    let remaining = deltaSeconds;
+    while (remaining > 0 && projectile) {
+      const step = Math.min(remaining, 1 / 120);
+      projectile.x += projectile.vx * step;
+      projectile.y += projectile.vy * step;
+      projectile.rotation += step * 3;
+      if (projectile.x <= RADIUS) { projectile.x = RADIUS; projectile.vx = Math.abs(projectile.vx); }
+      if (projectile.x >= canvas.width - RADIUS) { projectile.x = canvas.width - RADIUS; projectile.vx = -Math.abs(projectile.vx); }
+      let collided = projectile.y <= RADIUS;
+      if (!collided) {
+        for (let row = 0; row < ROWS && !collided; row += 1) {
+          for (let column = 0; column < COLUMNS; column += 1) {
+            if (!grid[row][column]) continue;
+            const position = cellPosition(row, column);
+            if ((position.x - projectile.x) ** 2 + (position.y - projectile.y) ** 2 <= (RADIUS * 1.85) ** 2) {
+              collided = true;
+              break;
+            }
           }
         }
       }
+      if (collided) resolveShot();
+      remaining -= step;
     }
-    if (collided) resolveShot();
   }
 
   function drawFruitBubble(x, y, type, size = RADIUS * 2, alpha = 1, rotation = 0) {
-    const fruit = FRUITS.find((item) => item.type === type) || FRUITS[0];
-    const image = images.get(type);
+    const sprite = bubbleSprites.get(type) || bubbleSprites.get(FRUITS[0].type);
     context.save();
     context.globalAlpha = alpha;
     context.translate(x, y);
     context.rotate(rotation);
-    const gradient = context.createRadialGradient(-size * 0.18, -size * 0.22, 2, 0, 0, size * 0.6);
-    gradient.addColorStop(0, "#fffbe9");
-    gradient.addColorStop(0.2, fruit.color);
-    gradient.addColorStop(1, "#315f48");
-    context.fillStyle = gradient;
-    context.shadowColor = "rgba(33, 72, 49, 0.24)";
-    context.shadowBlur = 8;
-    context.shadowOffsetY = 4;
-    context.beginPath();
-    context.arc(0, 0, size / 2, 0, Math.PI * 2);
-    context.fill();
-    context.shadowBlur = 0;
-    context.strokeStyle = "rgba(255,255,255,0.65)";
-    context.lineWidth = 2;
-    context.stroke();
-    if (image?.complete) context.drawImage(image, -size * 0.37, -size * 0.37, size * 0.74, size * 0.74);
+    const drawSize = size * 72 / (RADIUS * 2);
+    if (sprite) context.drawImage(sprite, -drawSize / 2, -drawSize / 2, drawSize, drawSize);
     context.restore();
   }
 
@@ -319,17 +365,7 @@
 
   function render(timestamp) {
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#dff1df";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "rgba(76,154,89,0.08)";
-    for (let x = 20; x < canvas.width; x += 56) {
-      context.beginPath(); context.arc(x, 120 + Math.sin(x) * 16, 38, 0, Math.PI * 2); context.fill();
-    }
-    context.strokeStyle = "rgba(47,111,77,0.18)";
-    context.lineWidth = 3;
-    context.setLineDash([8, 8]);
-    context.beginPath(); context.moveTo(0, Y_START + (ROWS - 2) * Y_STEP + RADIUS); context.lineTo(canvas.width, Y_START + (ROWS - 2) * Y_STEP + RADIUS); context.stroke();
-    context.setLineDash([]);
+    context.drawImage(backgroundCanvas, 0, 0);
 
     for (let row = 0; row < ROWS; row += 1) {
       for (let column = 0; column < COLUMNS; column += 1) {
@@ -340,6 +376,10 @@
       }
     }
     drawAimGuide();
+    projectileTrail.forEach((item, index) => {
+      const trailAlpha = item.life * (index + 1) / projectileTrail.length * 0.16;
+      drawFruitBubble(item.x, item.y, item.type, RADIUS * 1.55, trailAlpha, item.rotation);
+    });
     if (projectile) drawFruitBubble(projectile.x, projectile.y, projectile.type, RADIUS * 2, 1, projectile.rotation);
 
     pops.forEach((item) => drawFruitBubble(item.x, item.y, item.type, RADIUS * 2 * (1 + (1 - item.life) * 0.65), item.life));
@@ -366,8 +406,11 @@
     const delta = Math.min(50, timestamp - lastTime);
     lastTime = timestamp;
     const seconds = delta / 1000;
-    recoil = Math.max(0, recoil - seconds * 6);
+    angle += (targetAngle - angle) * (1 - Math.exp(-18 * seconds));
+    recoil *= Math.exp(-11 * seconds);
     updateProjectile(seconds);
+    projectileTrail.forEach((item) => { item.life -= seconds * 4.5; });
+    projectileTrail = projectileTrail.filter((item) => item.life > 0);
     pops.forEach((item) => { item.life -= seconds * 3.4; });
     pops = pops.filter((item) => item.life > 0);
     drops.forEach((item) => {
@@ -396,6 +439,8 @@
     maxCombo = 0;
     missesLeft = config.misses;
     angle = -Math.PI / 2;
+    targetAngle = angle;
+    projectileTrail = [];
     active = true;
     paused = false;
     lastTime = 0;
@@ -430,7 +475,7 @@
     const bounds = canvas.getBoundingClientRect();
     const x = (event.clientX - bounds.left) * canvas.width / bounds.width;
     const y = (event.clientY - bounds.top) * canvas.height / bounds.height;
-    angle = Math.max(-Math.PI + 0.24, Math.min(-0.24, Math.atan2(y - LAUNCHER.y, x - LAUNCHER.x)));
+    targetAngle = Math.max(-Math.PI + 0.24, Math.min(-0.24, Math.atan2(y - LAUNCHER.y, x - LAUNCHER.x)));
   }
 
   difficultyButtons.forEach((button) => button.addEventListener("click", () => {
@@ -440,7 +485,7 @@
     else { config = LEVELS[level]; missesLeft = config.misses; updateStatus(); }
   }));
   document.querySelectorAll("[data-aim]").forEach((button) => button.addEventListener("click", () => {
-    angle = Math.max(-Math.PI + 0.24, Math.min(-0.24, angle + Number(button.dataset.aim) * 0.12));
+    targetAngle = Math.max(-Math.PI + 0.24, Math.min(-0.24, targetAngle + Number(button.dataset.aim) * 0.12));
   }));
   document.getElementById("shootButton").addEventListener("click", shoot);
   document.getElementById("newGameButton").addEventListener("click", startGame);
@@ -448,10 +493,10 @@
   pauseButton.addEventListener("click", togglePause);
   canvas.addEventListener("pointermove", aimFromPointer);
   canvas.addEventListener("pointerdown", (event) => { aimFromPointer(event); event.preventDefault(); });
-  canvas.addEventListener("pointerup", (event) => { aimFromPointer(event); shoot(); });
+  canvas.addEventListener("pointerup", (event) => { aimFromPointer(event); angle = targetAngle; shoot(); });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") { event.preventDefault(); angle = Math.max(-Math.PI + 0.24, angle - 0.08); }
-    else if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") { event.preventDefault(); angle = Math.min(-0.24, angle + 0.08); }
+    if (event.key === "ArrowLeft" || event.key === "a" || event.key === "A") { event.preventDefault(); targetAngle = Math.max(-Math.PI + 0.24, targetAngle - 0.08); }
+    else if (event.key === "ArrowRight" || event.key === "d" || event.key === "D") { event.preventDefault(); targetAngle = Math.min(-0.24, targetAngle + 0.08); }
     else if (event.key === " " || event.key === "ArrowUp") { event.preventDefault(); shoot(); }
     else if (event.key === "p" || event.key === "P") togglePause();
   });

@@ -10,6 +10,7 @@
   width: 100%;
   aspect-ratio: 1;
   background: #dff1df;
+  contain: paint;
   touch-action: none;
   user-select: none;
 }
@@ -32,7 +33,9 @@
   box-shadow: 0 5px 0 var(--forest-dark);
   font-size: 1.3rem;
   font-weight: 900;
+  transition: transform 90ms ease, box-shadow 90ms ease;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .snake-controls button:active { box-shadow: 0 2px 0 var(--forest-dark); transform: translateY(3px); }
 .snake-controls span { color: var(--muted); font-size: 0.75rem; font-weight: 750; line-height: 1.4; text-align: center; }

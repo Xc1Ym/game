@@ -80,13 +80,40 @@
   const overlayButton = document.getElementById("overlayButton");
   const difficultyButtons = Array.from(document.querySelectorAll(".difficulty-button"));
   const images = new Map();
+  const blockSprites = new Map();
 
-  Object.values(PIECES).forEach((definition) => {
+  Object.entries(PIECES).forEach(([type, definition]) => {
     if (images.has(definition.fruit)) return;
     const image = new Image();
+    image.addEventListener("load", () => {
+      Object.entries(PIECES).forEach(([pieceType, pieceDefinition]) => {
+        if (pieceDefinition.fruit === definition.fruit) cacheFruitBlock(pieceType);
+      });
+    });
     image.src = "../../assets/fruits/" + definition.fruit + ".png";
     images.set(definition.fruit, image);
   });
+
+  const backgroundCanvas = document.createElement("canvas");
+  backgroundCanvas.width = canvas.width;
+  backgroundCanvas.height = canvas.height;
+  const backgroundContext = backgroundCanvas.getContext("2d");
+  backgroundContext.fillStyle = "#dff1df";
+  backgroundContext.fillRect(0, 0, backgroundCanvas.width, backgroundCanvas.height);
+  backgroundContext.fillStyle = "#b9d5b5";
+  backgroundContext.beginPath();
+  backgroundContext.roundRect(BOARD_X - 7, BOARD_Y - 7, COLUMNS * CELL + 14, ROWS * CELL + 14, 16);
+  backgroundContext.fill();
+  backgroundContext.fillStyle = "#eff8e9";
+  backgroundContext.fillRect(BOARD_X, BOARD_Y, COLUMNS * CELL, ROWS * CELL);
+  backgroundContext.strokeStyle = "rgba(52,100,64,0.09)";
+  backgroundContext.lineWidth = 1;
+  for (let column = 0; column <= COLUMNS; column += 1) {
+    backgroundContext.beginPath(); backgroundContext.moveTo(BOARD_X + column * CELL, BOARD_Y); backgroundContext.lineTo(BOARD_X + column * CELL, BOARD_Y + ROWS * CELL); backgroundContext.stroke();
+  }
+  for (let row = 0; row <= ROWS; row += 1) {
+    backgroundContext.beginPath(); backgroundContext.moveTo(BOARD_X, BOARD_Y + row * CELL); backgroundContext.lineTo(BOARD_X + COLUMNS * CELL, BOARD_Y + row * CELL); backgroundContext.stroke();
+  }
 
   let levelMode = "normal";
   let board = [];
@@ -105,7 +132,37 @@
   let particles = [];
   let dropTrails = [];
   let rotationPulse = 0;
+  let rotationGhost = null;
   let touchStart = null;
+  let heldHorizontal = 0;
+  let heldElapsed = 0;
+  let repeatAccumulator = 0;
+  let softDropHeld = false;
+  let softDropAccumulator = 0;
+
+  function cacheFruitBlock(type) {
+    const definition = PIECES[type];
+    const sprite = document.createElement("canvas");
+    sprite.width = CELL;
+    sprite.height = CELL;
+    const spriteContext = sprite.getContext("2d");
+    const gradient = spriteContext.createLinearGradient(0, 0, CELL, CELL);
+    gradient.addColorStop(0, "#fff8cf");
+    gradient.addColorStop(0.2, definition.color);
+    gradient.addColorStop(1, "#285f46");
+    spriteContext.fillStyle = gradient;
+    spriteContext.beginPath();
+    spriteContext.roundRect(2.5, 2.5, CELL - 5, CELL - 5, 7);
+    spriteContext.fill();
+    spriteContext.strokeStyle = "rgba(255,255,255,0.55)";
+    spriteContext.lineWidth = 1.5;
+    spriteContext.stroke();
+    const image = images.get(definition.fruit);
+    if (image?.complete && image.naturalWidth) spriteContext.drawImage(image, CELL * 0.17, CELL * 0.17, CELL * 0.66, CELL * 0.66);
+    blockSprites.set(type, sprite);
+  }
+
+  Object.keys(PIECES).forEach(cacheFruitBlock);
 
   function makeBoard() {
     return Array.from({ length: ROWS }, () => Array(COLUMNS).fill(null));
@@ -174,6 +231,7 @@
     const kicks = [0, -1, 1, -2, 2];
     const kick = kicks.find((amount) => !collides(board, rotated, piece.x + amount, piece.y));
     if (kick === undefined) return;
+    rotationGhost = { type: piece.type, cells: piece.cells.map((cell) => ({ ...cell })), x: piece.x, y: piece.y, life: 1 };
     piece.cells = rotated;
     piece.x += kick;
     rotationPulse = 1;
@@ -255,28 +313,13 @@
 
   function drawCell(column, row, type, alpha = 1, scale = 1) {
     if (row < 0) return;
-    const definition = PIECES[type];
     const x = BOARD_X + column * CELL;
     const y = BOARD_Y + row * CELL;
-    const inset = 2.5 + (1 - scale) * CELL / 2;
-    const size = CELL - inset * 2;
+    const sprite = blockSprites.get(type);
     context.save();
     context.globalAlpha = alpha;
-    const gradient = context.createLinearGradient(x, y, x + CELL, y + CELL);
-    gradient.addColorStop(0, "#fff8cf");
-    gradient.addColorStop(0.2, definition.color);
-    gradient.addColorStop(1, "#285f46");
-    context.fillStyle = gradient;
-    context.shadowColor = "rgba(36,75,50,0.2)";
-    context.shadowBlur = 5;
-    roundedCell(x + inset, y + inset, size, Math.max(4, size * 0.2));
-    context.fill();
-    context.shadowBlur = 0;
-    context.strokeStyle = "rgba(255,255,255,0.55)";
-    context.lineWidth = 1.5;
-    context.stroke();
-    const image = images.get(definition.fruit);
-    if (image?.complete && alpha > 0.3) context.drawImage(image, x + CELL * 0.17, y + CELL * 0.17, CELL * 0.66, CELL * 0.66);
+    const drawSize = CELL * scale;
+    if (sprite) context.drawImage(sprite, x + (CELL - drawSize) / 2, y + (CELL - drawSize) / 2, drawSize, drawSize);
     context.restore();
   }
 
@@ -286,20 +329,7 @@
 
   function render(timestamp) {
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#dff1df";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#b9d5b5";
-    context.beginPath(); context.roundRect(BOARD_X - 7, BOARD_Y - 7, COLUMNS * CELL + 14, ROWS * CELL + 14, 16); context.fill();
-    context.fillStyle = "#eff8e9";
-    context.fillRect(BOARD_X, BOARD_Y, COLUMNS * CELL, ROWS * CELL);
-    context.strokeStyle = "rgba(52,100,64,0.09)";
-    context.lineWidth = 1;
-    for (let column = 0; column <= COLUMNS; column += 1) {
-      context.beginPath(); context.moveTo(BOARD_X + column * CELL, BOARD_Y); context.lineTo(BOARD_X + column * CELL, BOARD_Y + ROWS * CELL); context.stroke();
-    }
-    for (let row = 0; row <= ROWS; row += 1) {
-      context.beginPath(); context.moveTo(BOARD_X, BOARD_Y + row * CELL); context.lineTo(BOARD_X + COLUMNS * CELL, BOARD_Y + row * CELL); context.stroke();
-    }
+    context.drawImage(backgroundCanvas, 0, 0);
 
     for (let row = 0; row < ROWS; row += 1) {
       for (let column = 0; column < COLUMNS; column += 1) {
@@ -323,6 +353,8 @@
       drawPiece(piece, piece.x, ghostY(), 0.18, 0.94);
       drawPiece(piece, displayX, visualY, 1, pulseScale);
     }
+
+    if (rotationGhost) drawPiece(rotationGhost, rotationGhost.x, rotationGhost.y, rotationGhost.life * 0.42, 0.88 + rotationGhost.life * 0.12);
 
     dropTrails.forEach((trail) => {
       const y = trail.toY + (trail.fromY - trail.toY) * trail.life;
@@ -350,6 +382,10 @@
     lastTime = timestamp;
     const seconds = delta / 1000;
     rotationPulse = Math.max(0, rotationPulse - seconds * 7);
+    if (rotationGhost) {
+      rotationGhost.life -= seconds * 8;
+      if (rotationGhost.life <= 0) rotationGhost = null;
+    }
     displayX += (piece ? piece.x - displayX : 0) * (1 - Math.exp(-22 * seconds));
     particles.forEach((particle) => {
       particle.x += particle.vx * seconds;
@@ -360,6 +396,24 @@
     particles = particles.filter((particle) => particle.life > 0);
     dropTrails.forEach((trail) => { trail.life -= seconds * 4.5; });
     dropTrails = dropTrails.filter((trail) => trail.life > 0);
+
+    if (heldHorizontal && piece && !clearAnimation) {
+      heldElapsed += seconds;
+      if (heldElapsed >= 0.14) {
+        repeatAccumulator += seconds;
+        while (repeatAccumulator >= 0.055) {
+          repeatAccumulator -= 0.055;
+          movePiece(heldHorizontal);
+        }
+      }
+    }
+    if (softDropHeld && piece && !clearAnimation) {
+      softDropAccumulator += seconds;
+      while (softDropAccumulator >= 0.055 && piece && !clearAnimation) {
+        softDropAccumulator -= 0.055;
+        stepDown(true);
+      }
+    }
 
     if (clearAnimation) {
       clearAnimation.elapsed += delta;
@@ -388,6 +442,12 @@
     clearAnimation = null;
     particles = [];
     dropTrails = [];
+    rotationGhost = null;
+    heldHorizontal = 0;
+    heldElapsed = 0;
+    repeatAccumulator = 0;
+    softDropHeld = false;
+    softDropAccumulator = 0;
     active = true;
     paused = false;
     lastTime = 0;
@@ -439,8 +499,28 @@
   pauseButton.addEventListener("click", togglePause);
   document.addEventListener("keydown", (event) => {
     const action = { ArrowLeft: "left", a: "left", A: "left", ArrowRight: "right", d: "right", D: "right", ArrowUp: "rotate", w: "rotate", W: "rotate", ArrowDown: "down", s: "down", S: "down", " ": "drop" }[event.key];
-    if (action) { event.preventDefault(); handleAction(action); }
+    if (action) {
+      event.preventDefault();
+      if (action === "left" || action === "right") {
+        if (event.repeat) return;
+        handleAction(action);
+        heldHorizontal = action === "left" ? -1 : 1;
+        heldElapsed = 0;
+        repeatAccumulator = 0;
+      } else if (action === "down") {
+        if (!event.repeat) stepDown(true);
+        softDropHeld = true;
+      } else if (!event.repeat) handleAction(action);
+    }
     else if (event.key === "p" || event.key === "P") togglePause();
+  });
+  document.addEventListener("keyup", (event) => {
+    if ((event.key === "ArrowLeft" || event.key === "a" || event.key === "A") && heldHorizontal < 0) heldHorizontal = 0;
+    if ((event.key === "ArrowRight" || event.key === "d" || event.key === "D") && heldHorizontal > 0) heldHorizontal = 0;
+    if (event.key === "ArrowDown" || event.key === "s" || event.key === "S") {
+      softDropHeld = false;
+      softDropAccumulator = 0;
+    }
   });
   canvas.addEventListener("pointerdown", (event) => {
     canvas.setPointerCapture(event.pointerId);
