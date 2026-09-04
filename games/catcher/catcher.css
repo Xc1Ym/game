@@ -8,6 +8,7 @@
   height: clamp(480px, 68vh, 680px);
   overflow: hidden;
   background: var(--catcher-background);
+  contain: layout paint;
   touch-action: none;
   user-select: none;
 }
@@ -58,6 +59,7 @@
   height: 100%;
   object-fit: contain;
   filter: none;
+  backface-visibility: hidden;
   pointer-events: none;
 }
 .falling-item.is-bad {
@@ -96,6 +98,9 @@
   box-shadow: 0 5px 0 var(--forest-dark);
   font-size: 1.35rem;
   font-weight: 900;
+  transition: transform 90ms ease, box-shadow 90ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .catch-controls button:active { box-shadow: 0 2px 0 var(--forest-dark); transform: translateY(3px); }
 .catch-controls span { color: var(--muted); font-size: 0.84rem; text-align: center; }

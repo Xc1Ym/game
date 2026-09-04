@@ -16,19 +16,25 @@
     return current + (target - current) * alpha;
   }
 
-  const api = { clamp, overlaps, smoothPosition };
-  if (!document) return api;
-
   const LEVELS = {
-    easy: { spawnEvery: 1000, speedMin: 82, speedMax: 118, badChance: 0.12 },
-    normal: { spawnEvery: 820, speedMin: 110, speedMax: 155, badChance: 0.17 },
-    hard: { spawnEvery: 660, speedMin: 145, speedMax: 205, badChance: 0.22 },
+    easy: { spawnEvery: 1250, speedMin: 55, speedMax: 82, badChance: 0.08 },
+    normal: { spawnEvery: 930, speedMin: 90, speedMax: 130, badChance: 0.14 },
+    hard: { spawnEvery: 460, speedMin: 200, speedMax: 285, badChance: 0.3 },
   };
+
+  const api = { LEVELS, clamp, overlaps, smoothPosition };
+  if (!document) return api;
   const BASKET_ACCELERATION = 2800;
   const BASKET_MAX_SPEED = 760;
   const BASKET_FRICTION = 9;
   const DURATION = 60;
   const FRUITS = ["apple", "banana", "blueberries", "cherries", "grapes", "kiwi", "lemon", "mango", "orange", "peach", "pear", "pineapple", "strawberry", "watermelon"];
+  const preloadedImages = [...FRUITS.map((name) => "../../assets/fruits/" + name + ".png"), "../../assets/bomb.png"]
+    .map((source) => {
+      const image = new Image();
+      image.src = source;
+      return image;
+    });
 
   const field = document.getElementById("catchField");
   const catcher = document.getElementById("catcher");
@@ -172,6 +178,9 @@
       y: -size,
       speed: config.speedMin + Math.random() * (config.speedMax - config.speedMin),
       rotation: -12 + Math.random() * 24,
+      spin: -28 + Math.random() * 56,
+      sway: 2 + Math.random() * 5,
+      swayPhase: Math.random() * Math.PI * 2,
     };
     items.push(item);
   }
@@ -220,8 +229,10 @@
     items.forEach((item) => {
       item.x = clamp(item.x, 0, Math.max(0, fieldWidth - item.size));
       item.y += item.speed * deltaSeconds;
-      item.element.style.transform = "translate(" + item.x + "px, " + item.y + "px) rotate(" + item.rotation + "deg)";
-      const itemRect = { left: item.x, right: item.x + item.size, top: item.y, bottom: item.y + item.size };
+      item.rotation += item.spin * deltaSeconds;
+      const displayX = clamp(item.x + Math.sin(item.y * 0.014 + item.swayPhase) * item.sway, 0, Math.max(0, fieldWidth - item.size));
+      item.element.style.transform = "translate3d(" + displayX + "px, " + item.y + "px, 0) rotate(" + item.rotation + "deg)";
+      const itemRect = { left: displayX, right: displayX + item.size, top: item.y, bottom: item.y + item.size };
       if (overlaps(itemRect, basketRect)) {
         catchItem(item);
       } else if (item.y > fieldHeight + item.size) {

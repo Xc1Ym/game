@@ -60,14 +60,14 @@
     return floating;
   }
 
-  const api = { neighborCells, findCluster, findFloating };
-  if (!document) return api;
-
   const LEVELS = {
-    easy: { colors: 4, initialRows: 4, misses: 6 },
-    normal: { colors: 5, initialRows: 5, misses: 5 },
-    hard: { colors: 6, initialRows: 6, misses: 4 },
+    easy: { colors: 4, initialRows: 3, misses: 8, shotSpeed: 550, addRows: 1 },
+    normal: { colors: 5, initialRows: 4, misses: 6, shotSpeed: 650, addRows: 1 },
+    hard: { colors: 7, initialRows: 7, misses: 3, shotSpeed: 900, addRows: 2 },
   };
+
+  const api = { LEVELS, neighborCells, findCluster, findFloating };
+  if (!document) return api;
   const FRUITS = [
     { type: "apple", color: "#ef5650" },
     { type: "lemon", color: "#f4c742" },
@@ -75,6 +75,7 @@
     { type: "grapes", color: "#9b62bd" },
     { type: "orange", color: "#f08a3c" },
     { type: "pear", color: "#8fbd4f" },
+    { type: "strawberry", color: "#dc5261" },
   ];
   const ROWS = 12;
   const COLUMNS = 9;
@@ -128,7 +129,7 @@
   backgroundContext.lineTo(backgroundCanvas.width, Y_START + (ROWS - 2) * Y_STEP + RADIUS);
   backgroundContext.stroke();
 
-  let level = "normal";
+  let level = "easy";
   let config = LEVELS[level];
   let grid = [];
   let currentType = "apple";
@@ -232,8 +233,10 @@
   }
 
   function addRow() {
-    for (let row = ROWS - 1; row > 0; row -= 1) grid[row] = grid[row - 1].slice();
-    grid[0] = Array.from({ length: COLUMNS }, () => Math.random() < 0.1 ? null : randomType());
+    for (let count = 0; count < config.addRows; count += 1) {
+      for (let row = ROWS - 1; row > 0; row -= 1) grid[row] = grid[row - 1].slice();
+      grid[0] = Array.from({ length: COLUMNS }, () => Math.random() < 0.1 ? null : randomType());
+    }
     missesLeft = config.misses;
   }
 
@@ -296,7 +299,7 @@
 
   function shoot() {
     if (!active || paused || projectile) return;
-    const speed = 700;
+    const speed = config.shotSpeed;
     projectile = { x: LAUNCHER.x, y: LAUNCHER.y - 18, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, type: currentType, rotation: 0 };
     projectileTrail = [];
     currentType = nextType;

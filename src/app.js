@@ -42,9 +42,9 @@
     passionfruit: "百香果",
   };
   const LEVELS = {
-    easy: { rows: 6, cols: 8, types: 10, time: 240, hints: 4, shuffles: 2, label: "悠闲" },
-    normal: { rows: 8, cols: 10, types: 16, time: 300, hints: 2, shuffles: 1, label: "进阶" },
-    hard: { rows: 10, cols: 12, types: 24, time: 360, hints: 1, shuffles: 1, label: "挑战" },
+    easy: { rows: 6, cols: 8, types: 8, time: 300, hints: 5, shuffles: 3, label: "悠闲" },
+    normal: { rows: 8, cols: 10, types: 14, time: 360, hints: 3, shuffles: 2, label: "进阶" },
+    hard: { rows: 10, cols: 12, types: 24, time: 240, hints: 0, shuffles: 0, label: "挑战" },
   };
   const STORAGE_KEYS = {
     leaderboard: "fruitLinkLeaderboardV1",

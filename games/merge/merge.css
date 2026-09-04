@@ -38,8 +38,8 @@
   position: absolute;
   inset: var(--board-pad);
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--size, 4), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--size, 4), minmax(0, 1fr));
   gap: var(--board-gap);
 }
 .merge-grid-background { z-index: 1; }
@@ -58,6 +58,8 @@
   min-width: 0;
   min-height: 0;
   place-items: center;
+  backface-visibility: hidden;
+  transform: translateZ(0);
   will-change: transform;
 }
 .merge-tile-content {
@@ -116,6 +118,9 @@
   box-shadow: 0 5px 0 var(--forest-dark);
   font-size: 1.25rem;
   font-weight: 900;
+  transition: transform 90ms ease, box-shadow 90ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .merge-controls button:active { box-shadow: 0 2px 0 var(--forest-dark); transform: translateY(3px); }
 .merge-controls span { color: var(--muted); font-size: 0.75rem; font-weight: 750; line-height: 1.4; text-align: center; }

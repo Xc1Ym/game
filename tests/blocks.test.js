@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { SHAPES, rotateCells, collides, completeRows, clearCompletedRows } = require("../games/blocks/blocks.js");
+const { SHAPES, rotateCells, collides, completeRows, clearCompletedRows, dropIntervalFor } = require("../games/blocks/blocks.js");
 
 test("fruit blocks rotate into normalized coordinates", () => {
   const rotated = rotateCells(SHAPES.I);
@@ -27,4 +27,11 @@ test("completed fruit rows clear and preserve board height", () => {
   assert.equal(result.cleared, 2);
   assert.equal(result.board.length, 4);
   assert.deepEqual(result.board[3], [null, "O", null, null]);
+});
+
+test("fruit blocks difficulty separates relaxed, normal, and challenge speed curves", () => {
+  assert.ok(dropIntervalFor("easy", 1) > dropIntervalFor("normal", 1));
+  assert.ok(dropIntervalFor("normal", 1) > dropIntervalFor("hard", 1));
+  assert.equal(dropIntervalFor("easy", 30), 520);
+  assert.equal(dropIntervalFor("hard", 30), 70);
 });

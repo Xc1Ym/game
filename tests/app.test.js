@@ -58,7 +58,7 @@ test("manual shuffle during an animation preserves the new board and selection",
   const nextTile = app.tile(0, 2);
   nextTile.click();
   app.advance(300);
-  assert.equal(app.nodes.shuffleCount.textContent, 1);
+  assert.equal(app.nodes.shuffleCount.textContent, 2);
   assert.equal(app.tile(0, 2), nextTile);
   assert.equal(nextTile.getAttribute("aria-selected"), "true");
   app.tile(0, 3).click();
@@ -71,7 +71,7 @@ test("automatic shuffle runs immediately when a match leaves no moves", () => {
   ], { shuffleRemaining: () => [[null, null], ["orange", "orange"], ["lemon", "lemon"]] });
   match(app);
   assert.equal(app.nodes.boardWrap.classList.contains("auto-shuffled"), true);
-  assert.equal(app.nodes.shuffleCount.textContent, 2);
+  assert.equal(app.nodes.shuffleCount.textContent, 3);
   const nextTile = app.tile(1, 0);
   nextTile.click();
   app.advance(300);
@@ -97,7 +97,7 @@ test("new game during an animation is untouched by old callbacks", () => {
 
 test("final match settles once immediately and cannot lose to the timer", () => {
   const app = createApp([["apple", "apple"]]);
-  app.advance(239900);
+  app.advance(299900);
   match(app);
   assert.equal(app.nodes.finalScore.textContent, "22");
   assert.equal(app.nodes.resultTitle.textContent, "果园大丰收！");
@@ -123,7 +123,7 @@ test("restarting after the final match cancels the pending results popup", () =>
 
 test("animation finishing after timeout does not re-enable gameplay", () => {
   const app = createApp(board);
-  app.advance(239900);
+  app.advance(299900);
   match(app);
   app.advance(600);
   assert.equal(app.nodes.resultTitle.textContent, "差一点就丰收了");
@@ -140,4 +140,19 @@ test("invalid matches still deduct points during another pair's animation", () =
   assert.equal(app.nodes.score.textContent, "15");
   match(app, 2);
   assert.equal(app.nodes.score.textContent, "35");
+});
+
+test("link-link difficulty gives more help to relaxed modes and more pressure to challenge", () => {
+  const app = createApp(board);
+  assert.equal(app.nodes.timeText.textContent, "05:00");
+  assert.equal(app.nodes.hintCount.textContent, 5);
+  assert.equal(app.nodes.shuffleCount.textContent, 3);
+  app.difficulties[1].click();
+  assert.equal(app.nodes.timeText.textContent, "06:00");
+  assert.equal(app.nodes.hintCount.textContent, 3);
+  assert.equal(app.nodes.shuffleCount.textContent, 2);
+  app.difficulties[2].click();
+  assert.equal(app.nodes.timeText.textContent, "04:00");
+  assert.equal(app.nodes.hintCount.textContent, 0);
+  assert.equal(app.nodes.shuffleCount.textContent, 0);
 });

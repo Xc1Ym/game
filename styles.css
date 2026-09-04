@@ -299,7 +299,10 @@ h1 {
   border: 1px solid rgba(214, 190, 153, 0.78);
   border-radius: clamp(7px, 1.3vw, 13px);
   box-shadow: 0 3px 7px rgba(103, 77, 43, 0.1), inset 0 1px rgba(255,255,255,.8);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, opacity 0.2s ease;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  transition: transform 0.18s cubic-bezier(0.2, 0.82, 0.28, 1), box-shadow 0.18s ease, border-color 0.18s ease, opacity 0.22s ease;
+  will-change: transform, opacity;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -365,9 +368,9 @@ h1 {
   filter: saturate(1.16) drop-shadow(0 3px 3px rgba(112, 58, 24, 0.22));
 }
 
-.tile.hinted { animation: hintPulse 0.48s ease-in-out 2; border-color: #e7a43d; }
-.tile.invalid { animation: shake 0.28s ease; border-color: #df665c; }
-.tile.matched { animation: harvest 0.28s ease forwards; }
+.tile.hinted { animation: hintPulse 0.56s cubic-bezier(0.2, 0.82, 0.28, 1) 2; border-color: #e7a43d; }
+.tile.invalid { animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97); border-color: #df665c; }
+.tile.matched { animation: harvest 0.28s cubic-bezier(0.22, 0.68, 0.24, 1) forwards; }
 .tile.removed { cursor: default; visibility: hidden; pointer-events: none; }
 
 .path-layer {
@@ -379,6 +382,8 @@ h1 {
   overflow: visible;
   pointer-events: none;
   opacity: 0;
+  transition: opacity 90ms linear;
+  will-change: opacity;
 }
 
 .path-layer.visible { opacity: 1; }

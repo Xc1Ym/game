@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { neighborCells, findCluster, findFloating } = require("../games/bubbles/bubbles.js");
+const { LEVELS, neighborCells, findCluster, findFloating } = require("../games/bubbles/bubbles.js");
 
 test("bubble hex neighbors respect edges and row offsets", () => {
   assert.equal(neighborCells(0, 0, 5, 5).length, 2);
@@ -28,4 +28,14 @@ test("unsupported bubbles are detected as floating", () => {
     [null, null, "pear", null],
   ];
   assert.deepEqual(findFloating(grid), [{ row: 2, column: 2 }]);
+});
+
+test("bubble difficulty eases setup and sharply increases challenge pressure", () => {
+  assert.ok(LEVELS.easy.initialRows < LEVELS.normal.initialRows);
+  assert.ok(LEVELS.normal.initialRows < LEVELS.hard.initialRows);
+  assert.ok(LEVELS.easy.misses > LEVELS.normal.misses);
+  assert.ok(LEVELS.normal.misses > LEVELS.hard.misses);
+  assert.ok(LEVELS.easy.shotSpeed < LEVELS.normal.shotSpeed);
+  assert.ok(LEVELS.normal.shotSpeed < LEVELS.hard.shotSpeed);
+  assert.equal(LEVELS.hard.addRows, 2);
 });

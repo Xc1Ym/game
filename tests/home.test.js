@@ -55,6 +55,16 @@ test("every arcade route resolves to a complete game page", () => {
   });
 });
 
+test("every game exposes the same three difficulty tiers", () => {
+  const routes = [...homepage.matchAll(/data-href="([^"]+)"/g)].map((match) => match[1]);
+  routes.forEach((route) => {
+    const html = readFileSync(join(root, route, "index.html"), "utf8");
+    ["easy", "normal", "hard"].forEach((level) => {
+      assert.match(html, new RegExp(`data-level="${level}"`), `${route} is missing ${level}`);
+    });
+  });
+});
+
 test("every PLAY item is a native one-click link", () => {
   const links = [...homepage.matchAll(/href="(games\/[^"]+\/)"[\s\S]*?data-href="\1"/g)].map((match) => match[1]);
   assert.deepEqual(links, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/", "games/snake/", "games/bubbles/", "games/blocks/"]);

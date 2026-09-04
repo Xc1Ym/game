@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { readFileSync } = require("node:fs");
 const { resolve } = require("node:path");
-const { clamp, overlaps, smoothPosition } = require("../games/catcher/catcher.js");
+const { LEVELS, clamp, overlaps, smoothPosition } = require("../games/catcher/catcher.js");
 
 const catcherStyles = readFileSync(resolve(__dirname, "../games/catcher/catcher.css"), "utf8");
 
@@ -29,4 +29,13 @@ test("catcher field shares one background color and fruit sprites have no tinted
   assert.match(catcherStyles, /--catcher-background:\s*#dff1df/);
   assert.match(catcherStyles, /\.catch-field\s*\{[\s\S]*?background:\s*var\(--catcher-background\)/);
   assert.match(catcherStyles, /\.falling-item img\s*\{[\s\S]*?filter:\s*none/);
+});
+
+test("catcher difficulty separates relaxed, normal, and challenge pacing", () => {
+  assert.ok(LEVELS.easy.spawnEvery > LEVELS.normal.spawnEvery);
+  assert.ok(LEVELS.normal.spawnEvery > LEVELS.hard.spawnEvery);
+  assert.ok(LEVELS.easy.speedMax < LEVELS.normal.speedMin);
+  assert.ok(LEVELS.normal.speedMax < LEVELS.hard.speedMin);
+  assert.ok(LEVELS.easy.badChance < LEVELS.normal.badChance);
+  assert.ok(LEVELS.normal.badChance < LEVELS.hard.badChance);
 });

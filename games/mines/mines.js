@@ -36,14 +36,14 @@
     return getNeighbors(index, rows, cols).filter((neighbor) => mines.has(neighbor)).length;
   }
 
-  const api = { getNeighbors, buildMineSet, countAdjacentMines };
-  if (!document) return api;
-
   const LEVELS = {
-    easy: { rows: 8, cols: 8, mines: 10 },
-    normal: { rows: 10, cols: 12, mines: 20 },
-    hard: { rows: 12, cols: 16, mines: 40 },
+    easy: { rows: 8, cols: 8, mines: 8 },
+    normal: { rows: 10, cols: 12, mines: 16 },
+    hard: { rows: 12, cols: 16, mines: 52 },
   };
+
+  const api = { LEVELS, getNeighbors, buildMineSet, countAdjacentMines };
+  if (!document) return api;
 
   const boardElement = document.getElementById("mineBoard");
   const minesLeftElement = document.getElementById("minesLeft");
@@ -123,18 +123,19 @@
   }
 
   function revealArea(startIndex) {
-    const queue = [startIndex];
+    const queue = [{ index: startIndex, depth: 0 }];
     const visited = new Set();
     while (queue.length) {
-      const index = queue.shift();
+      const { index, depth } = queue.shift();
       if (visited.has(index)) continue;
       visited.add(index);
       const cell = cells[index];
       if (!cell || cell.flagged || cell.revealed) continue;
       cell.revealed = true;
       cell.justRevealed = true;
+      cell.revealDelay = Math.min(180, depth * 18);
       if (cell.count === 0 && !cell.mine) {
-        getNeighbors(index, config.rows, config.cols).forEach((neighbor) => queue.push(neighbor));
+        getNeighbors(index, config.rows, config.cols).forEach((neighbor) => queue.push({ index: neighbor, depth: depth + 1 }));
       }
     }
   }
@@ -148,10 +149,14 @@
       resultMessage.textContent = "你在 " + formatTime(seconds) + " 内排除了全部地雷。";
       resultImage.src = "../../assets/fruits/kiwi.png";
     } else {
-      cells.forEach((cell) => {
+      const triggerIndex = cells.findIndex((cell) => cell.triggered);
+      cells.forEach((cell, index) => {
         if (cell.mine && !cell.revealed) {
           cell.revealed = true;
           cell.justRevealed = true;
+          const rowDistance = Math.abs(Math.floor(index / config.cols) - Math.floor(triggerIndex / config.cols));
+          const colDistance = Math.abs(index % config.cols - triggerIndex % config.cols);
+          cell.revealDelay = Math.min(240, (rowDistance + colDistance) * 18);
         }
       });
       resultTitle.textContent = "踩到地雷了";
@@ -178,6 +183,7 @@
     if (cells[index].mine) {
       cells[index].revealed = true;
       cells[index].justRevealed = true;
+      cells[index].revealDelay = 0;
       cells[index].triggered = true;
       endGame(false);
       return;
@@ -193,6 +199,7 @@
     const flagged = cells.filter((cell) => cell.flagged).length;
     if (!cells[index].flagged && flagged >= config.mines) return;
     cells[index].flagged = !cells[index].flagged;
+    cells[index].justFlagged = true;
     renderBoard();
     updateStatus();
   }
@@ -214,7 +221,10 @@
         event.preventDefault();
         toggleFlag(index);
       });
-      button.addEventListener("animationend", () => button.classList.remove("is-opening"));
+      button.addEventListener("animationend", () => {
+        button.classList.remove("is-opening", "is-flagging");
+        button.style.animationDelay = "";
+      });
       boardElement.appendChild(button);
     });
   }
@@ -226,9 +236,10 @@
     cells.forEach((cell, index) => {
       const button = boardElement.children[index];
       const viewKey = [cell.revealed, cell.flagged, cell.mine, cell.count, cell.triggered].join("-");
-      if (button.dataset.view === viewKey && !cell.justRevealed) return;
+      if (button.dataset.view === viewKey && !cell.justRevealed && !cell.justFlagged) return;
       button.dataset.view = viewKey;
       button.className = "mine-cell";
+      button.style.animationDelay = "";
       button.removeAttribute("data-count");
       button.replaceChildren();
       button.setAttribute("aria-label", cell.revealed ? (cell.mine ? "地雷" : "周围 " + cell.count + " 个地雷") : (cell.flagged ? "已插旗" : "未翻开"));
@@ -236,6 +247,7 @@
         button.classList.add("is-revealed");
         if (cell.justRevealed) {
           button.classList.add("is-opening");
+          button.style.animationDelay = (cell.revealDelay || 0) + "ms";
           cell.justRevealed = false;
         }
         if (cell.mine) {
@@ -252,7 +264,9 @@
         }
       } else if (cell.flagged) {
         button.classList.add("is-flagged");
+        if (cell.justFlagged) button.classList.add("is-flagging");
       }
+      cell.justFlagged = false;
     });
   }
 
@@ -265,7 +279,9 @@
       revealed: false,
       flagged: false,
       justRevealed: false,
+      revealDelay: 0,
       triggered: false,
+      justFlagged: false,
     }));
     mines = new Set();
     firstMove = true;

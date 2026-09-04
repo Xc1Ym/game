@@ -103,9 +103,17 @@ button { touch-action: manipulation; }
   background: #f6f0e4;
   border: 1px solid #e8ddca;
   border-radius: 10px;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(0.2, 0.82, 0.28, 1), box-shadow 160ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 .difficulty-button.is-active,
-.mode-button.is-active { color: #fff; background: var(--forest); border-color: var(--forest); }
+.mode-button.is-active {
+  color: #fff;
+  background: var(--forest);
+  border-color: var(--forest);
+  box-shadow: 0 4px 10px rgba(23, 73, 54, 0.2);
+  transform: translateY(-1px);
+}
 
 .primary-button {
   min-height: 42px;

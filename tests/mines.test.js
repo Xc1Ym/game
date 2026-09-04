@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { getNeighbors, buildMineSet, countAdjacentMines } = require("../games/mines/mines.js");
+const { LEVELS, getNeighbors, buildMineSet, countAdjacentMines } = require("../games/mines/mines.js");
 
 test("mine neighbors respect board edges", () => {
   assert.deepEqual(getNeighbors(0, 3, 3).sort((a, b) => a - b), [1, 3, 4]);
@@ -18,4 +18,13 @@ test("adjacent mine counts are calculated correctly", () => {
   const mines = new Set([0, 2, 8]);
   assert.equal(countAdjacentMines(4, 3, 3, mines), 3);
   assert.equal(countAdjacentMines(7, 3, 3, mines), 1);
+});
+
+test("mine difficulty lowers relaxed and normal density while raising challenge density", () => {
+  const density = ({ rows, cols, mines }) => mines / (rows * cols);
+  assert.ok(density(LEVELS.easy) < 10 / 64);
+  assert.ok(density(LEVELS.normal) < 20 / 120);
+  assert.ok(density(LEVELS.hard) > 40 / 192);
+  assert.ok(density(LEVELS.easy) < density(LEVELS.normal));
+  assert.ok(density(LEVELS.normal) < density(LEVELS.hard));
 });

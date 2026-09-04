@@ -43,14 +43,19 @@
     return { board: next, cleared: rows.length, rows };
   }
 
-  const api = { SHAPES, rotateCells, collides, completeRows, clearCompletedRows };
-  if (!document) return api;
-
   const LEVELS = {
-    easy: { drop: 820 },
-    normal: { drop: 570 },
-    hard: { drop: 360 },
+    easy: { drop: 1100, minimumDrop: 520, acceleration: 30 },
+    normal: { drop: 720, minimumDrop: 260, acceleration: 44 },
+    hard: { drop: 260, minimumDrop: 70, acceleration: 52 },
   };
+
+  function dropIntervalFor(mode, gameLevel) {
+    const config = LEVELS[mode] || LEVELS.normal;
+    return Math.max(config.minimumDrop, config.drop - Math.max(0, gameLevel - 1) * config.acceleration);
+  }
+
+  const api = { SHAPES, LEVELS, rotateCells, collides, completeRows, clearCompletedRows, dropIntervalFor };
+  if (!document) return api;
   const PIECES = {
     I: { color: "#69aeca", fruit: "blueberries" },
     O: { color: "#efc84b", fruit: "lemon" },
@@ -115,7 +120,7 @@
     backgroundContext.beginPath(); backgroundContext.moveTo(BOARD_X, BOARD_Y + row * CELL); backgroundContext.lineTo(BOARD_X + COLUMNS * CELL, BOARD_Y + row * CELL); backgroundContext.stroke();
   }
 
-  let levelMode = "normal";
+  let levelMode = "easy";
   let board = [];
   let piece = null;
   let nextType = "T";
@@ -187,7 +192,7 @@
   }
 
   function dropInterval() {
-    return Math.max(90, LEVELS[levelMode].drop - (gameLevel() - 1) * 46);
+    return dropIntervalFor(levelMode, gameLevel());
   }
 
   function readBest() {

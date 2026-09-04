@@ -45,12 +45,12 @@
     return { board: next, scoreGain, moved };
   }
 
-  function addRandomTile(board, random = Math.random) {
+  function addRandomTile(board, random = Math.random, fourChance = 0.1) {
     const empty = board.map((value, index) => value === 0 ? index : -1).filter((index) => index >= 0);
     if (!empty.length) return board.slice();
     const next = board.slice();
     const target = empty[Math.floor(random() * empty.length)];
-    next[target] = random() < 0.9 ? 1 : 2;
+    next[target] = random() < 1 - fourChance ? 1 : 2;
     return next;
   }
 
@@ -103,7 +103,13 @@
     return { tiles: nextTiles, transitions, scoreGain, moved };
   }
 
-  const api = { slideLine, moveBoard, addRandomTile, canMove, planTileMove };
+  const LEVELS = {
+    easy: { label: "悠闲", size: 5, startTiles: 2, fourChance: 0, extraChance: 0 },
+    normal: { label: "进阶", size: 4, startTiles: 2, fourChance: 0.04, extraChance: 0 },
+    hard: { label: "挑战", size: 4, startTiles: 4, fourChance: 0.22, extraChance: 0.3 },
+  };
+
+  const api = { LEVELS, slideLine, moveBoard, addRandomTile, canMove, planTileMove };
   if (!document) return api;
 
   const FRUITS = [
@@ -120,7 +126,7 @@
     { name: "火龙果", file: "dragonfruit.png" },
     { name: "西瓜", file: "watermelon.png" },
   ];
-  const MOVE_DURATION = 170;
+  const MOVE_DURATION = 185;
 
   const boardElement = document.getElementById("mergeBoard");
   const scoreElement = document.getElementById("score");
@@ -132,7 +138,10 @@
   const resultMessage = document.getElementById("resultMessage");
   const resultImage = document.getElementById("resultImage");
   const resultButton = document.getElementById("resultButton");
+  const difficultyButtons = Array.from(document.querySelectorAll(".difficulty-button"));
 
+  let level = "easy";
+  let config = LEVELS[level];
   let tileLayer = null;
   let tiles = [];
   let tileElements = new Map();
@@ -147,6 +156,7 @@
   let startX = 0;
   let startY = 0;
   let pointerId = null;
+  let queuedDirection = null;
 
   function createId() {
     const id = "tile-" + nextId;
@@ -155,17 +165,17 @@
   }
 
   function readBest() {
-    try { return Number(root.localStorage.getItem("orchard-merge-best")) || 0; } catch { return 0; }
+    try { return Number(root.localStorage.getItem("orchard-merge-best-" + level)) || 0; } catch { return 0; }
   }
 
   function updateBest() {
     if (score > readBest()) {
-      try { root.localStorage.setItem("orchard-merge-best", String(score)); } catch {}
+      try { root.localStorage.setItem("orchard-merge-best-" + level, String(score)); } catch {}
     }
   }
 
   function boardValues() {
-    const values = Array(16).fill(0);
+    const values = Array(config.size * config.size).fill(0);
     tiles.forEach((tile) => { values[tile.position] = tile.level; });
     return values;
   }
@@ -175,8 +185,8 @@
   }
 
   function placeElement(element, position) {
-    element.style.gridColumn = String(position % 4 + 1);
-    element.style.gridRow = String(Math.floor(position / 4) + 1);
+    element.style.gridColumn = String(position % config.size + 1);
+    element.style.gridRow = String(Math.floor(position / config.size) + 1);
   }
 
   function updateTileContent(element, tile) {
@@ -230,10 +240,10 @@
 
   function addRandomGameTile() {
     const occupied = new Set(tiles.map((tile) => tile.position));
-    const empty = Array.from({ length: 16 }, (_, index) => index).filter((position) => !occupied.has(position));
+    const empty = Array.from({ length: config.size * config.size }, (_, index) => index).filter((position) => !occupied.has(position));
     if (!empty.length) return;
     const position = empty[Math.floor(Math.random() * empty.length)];
-    tiles.push({ id: createId(), level: Math.random() < 0.9 ? 1 : 2, position });
+    tiles.push({ id: createId(), level: Math.random() < 1 - config.fourChance ? 1 : 2, position });
   }
 
   function renderStatus() {
@@ -263,6 +273,7 @@
     if (token !== animationToken) return;
     tiles = plan.tiles;
     addRandomGameTile();
+    if (config.extraChance && Math.random() < config.extraChance) addRandomGameTile();
     score += plan.scoreGain;
     moves += 1;
     updateBest();
@@ -273,9 +284,13 @@
     if (highestLevel() >= 11 && !wonShown) {
       wonShown = true;
       showResult("continue");
-    } else if (!canMove(boardValues())) {
+    } else if (!canMove(boardValues(), config.size)) {
       showResult("restart");
     }
+
+    const nextDirection = queuedDirection;
+    queuedDirection = null;
+    if (nextDirection) root.requestAnimationFrame(() => handleMove(nextDirection));
   }
 
   function animateMove(plan) {
@@ -292,11 +307,17 @@
       if (element) placeElement(element, transition.toPosition);
     });
 
+    const endRects = new Map();
+    plan.transitions.forEach((transition) => {
+      const element = tileElements.get(transition.id);
+      if (element) endRects.set(transition.id, element.getBoundingClientRect());
+    });
+
     plan.transitions.forEach((transition) => {
       const element = tileElements.get(transition.id);
       const startRect = startRects.get(transition.id);
-      if (!element || !startRect) return;
-      const endRect = element.getBoundingClientRect();
+      const endRect = endRects.get(transition.id);
+      if (!element || !startRect || !endRect) return;
       element.style.transition = "none";
       element.style.transform = "translate3d(" + (startRect.left - endRect.left) + "px, " + (startRect.top - endRect.top) + "px, 0)";
     });
@@ -316,8 +337,12 @@
   }
 
   function handleMove(direction) {
-    if (animating || !resultOverlay.classList.contains("is-hidden")) return;
-    const plan = planTileMove(tiles, direction, 4, createId);
+    if (!resultOverlay.classList.contains("is-hidden")) return;
+    if (animating) {
+      queuedDirection = direction;
+      return;
+    }
+    const plan = planTileMove(tiles, direction, config.size, createId);
     if (!plan.moved) return;
     animateMove(plan);
   }
@@ -326,7 +351,8 @@
     boardElement.replaceChildren();
     const background = document.createElement("div");
     background.className = "merge-grid-background";
-    for (let index = 0; index < 16; index += 1) {
+    boardElement.style.setProperty("--size", config.size);
+    for (let index = 0; index < config.size * config.size; index += 1) {
       const cell = document.createElement("div");
       cell.className = "merge-grid-cell";
       background.appendChild(cell);
@@ -340,13 +366,14 @@
     animationToken += 1;
     root.clearTimeout(settleTimer);
     animating = false;
+    queuedDirection = null;
+    config = LEVELS[level];
     nextId = 1;
     tiles = [];
     tileElements = new Map();
     resultOverlay.classList.add("is-hidden");
     initializeBoard();
-    addRandomGameTile();
-    addRandomGameTile();
+    for (let index = 0; index < config.startTiles; index += 1) addRandomGameTile();
     score = 0;
     moves = 0;
     wonShown = false;
@@ -356,6 +383,14 @@
 
   document.querySelectorAll("[data-direction]").forEach((button) => {
     button.addEventListener("click", () => handleMove(button.dataset.direction));
+  });
+
+  difficultyButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      level = button.dataset.level;
+      difficultyButtons.forEach((item) => item.classList.toggle("is-active", item === button));
+      newGame();
+    });
   });
   document.addEventListener("keydown", (event) => {
     const directions = {

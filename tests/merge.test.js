@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { slideLine, moveBoard, addRandomTile, canMove, planTileMove } = require("../games/merge/merge.js");
+const { LEVELS, slideLine, moveBoard, addRandomTile, canMove, planTileMove } = require("../games/merge/merge.js");
 
 test("fruit tiles slide and merge once per move", () => {
   assert.deepEqual(slideLine([1, 1, 1, 1]), { line: [2, 2, 0, 0], scoreGain: 8 });
@@ -56,4 +56,19 @@ test("animation plan preserves moving tiles and replaces only merged pairs", () 
   ]);
   assert.deepEqual(plan.transitions.filter((transition) => transition.removed).map((transition) => transition.id), ["a", "b"]);
   assert.equal(plan.transitions.find((transition) => transition.id === "c").toPosition, 4);
+});
+
+test("merge difficulty adds space for relaxed play and pressure for challenge play", () => {
+  assert.equal(LEVELS.easy.size, 5);
+  assert.equal(LEVELS.normal.size, 4);
+  assert.equal(LEVELS.hard.startTiles, 4);
+  assert.ok(LEVELS.easy.fourChance < LEVELS.normal.fourChance);
+  assert.ok(LEVELS.normal.fourChance < LEVELS.hard.fourChance);
+  assert.ok(LEVELS.hard.extraChance > 0);
+});
+
+test("random tile generation obeys the configured four-fruit chance", () => {
+  const randomValues = [0, 0.99];
+  const next = addRandomTile(Array(16).fill(0), () => randomValues.shift(), 0.2);
+  assert.equal(next[0], 2);
 });
