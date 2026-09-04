@@ -1,0 +1,68 @@
+.mine-panel { padding: clamp(12px, 3vw, 25px); background: #e9f2de; }
+
+.mine-board {
+  display: grid;
+  width: min(100%, 720px);
+  aspect-ratio: var(--cols) / var(--rows);
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: clamp(2px, 0.55vw, 5px);
+  margin: 0 auto;
+  padding: clamp(7px, 2vw, 16px);
+  background: #9bb874;
+  border: 4px solid #6f8c51;
+  border-radius: 17px;
+  box-shadow: inset 0 5px 0 rgba(255, 255, 255, 0.23);
+  touch-action: manipulation;
+}
+
+.mine-cell {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0;
+  color: #274c36;
+  cursor: pointer;
+  background: linear-gradient(145deg, #f9f2d4, #d6dfa8);
+  border: 1px solid #76905c;
+  border-radius: clamp(3px, 0.8vw, 8px);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.62), 0 2px 0 #667d4f;
+  font-size: clamp(0.72rem, 2.6vw, 1.28rem);
+  font-weight: 950;
+  line-height: 1;
+}
+.mine-cell:hover { filter: brightness(1.05); }
+.mine-cell:focus-visible { outline: 3px solid var(--orange); outline-offset: 1px; }
+.mine-cell.is-revealed {
+  cursor: default;
+  background: #f8f7e9;
+  border-color: #c7cfac;
+  box-shadow: inset 0 0 0 1px rgba(116, 138, 90, 0.12);
+}
+.mine-cell.is-flagged {
+  color: #b54932;
+  background: #ffe0a2;
+}
+.mine-cell.is-flagged::after { content: "▲"; font-size: 0.8em; text-shadow: 0 2px 0 #fff4cd; }
+.mine-cell.is-mine {
+  color: #fff;
+  background: #d65b43;
+  border-color: #a7342b;
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.16);
+}
+.mine-cell.is-mine::after { content: "×"; font-size: 1.45em; }
+.mine-cell[data-count="1"] { color: #2870a3; }
+.mine-cell[data-count="2"] { color: #2b7b47; }
+.mine-cell[data-count="3"] { color: #d15a36; }
+.mine-cell[data-count="4"] { color: #6751aa; }
+.mine-cell[data-count="5"],
+.mine-cell[data-count="6"],
+.mine-cell[data-count="7"],
+.mine-cell[data-count="8"] { color: #9b3c61; }
+
+@media (max-width: 620px) {
+  .mine-panel { padding: 7px; }
+  .mine-board { gap: 2px; padding: 6px; border-width: 3px; border-radius: 12px; }
+  .mine-cell { border-radius: 3px; box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.58), 0 1px 0 #667d4f; }
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#174936" />
+    <meta name="description" content="滑动合并相同水果、挑战合成西瓜的水果版 2048。" />
+    <title>水果合成｜果园街机厅</title>
+    <link rel="stylesheet" href="../shared.css" />
+    <link rel="stylesheet" href="merge.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="game-header">
+        <a class="back-home" href="../../">← 街机厅</a>
+        <div class="game-brand">
+          <img src="../../assets/fruits/watermelon.png" alt="" />
+          <div><p class="eyebrow">FRUIT 2048</p><h1>水果合成</h1></div>
+        </div>
+        <button class="header-action" id="resetButton" type="button">重新开始</button>
+      </header>
+
+      <section class="merge-goal">
+        <span>本局目标</span>
+        <strong>合成 2048 西瓜</strong>
+        <div class="goal-fruits" aria-hidden="true">
+          <img src="../../assets/fruits/cherries.png" alt="" />
+          <span>→</span>
+          <img src="../../assets/fruits/dragonfruit.png" alt="" />
+          <span>→</span>
+          <img src="../../assets/fruits/watermelon.png" alt="" />
+        </div>
+      </section>
+
+      <section class="status-strip" aria-label="本局状态">
+        <div class="status-box"><span>积分</span><strong id="score">0</strong></div>
+        <div class="status-box"><span>本机最佳</span><strong id="bestScore">0</strong></div>
+        <div class="status-box"><span>移动次数</span><strong id="moveCount">0</strong></div>
+        <div class="status-box"><span>最大水果</span><strong id="highestFruit">樱桃</strong></div>
+      </section>
+
+      <section class="game-panel merge-panel">
+        <div class="merge-board" id="mergeBoard" role="grid" aria-label="水果合成棋盘"></div>
+        <div class="result-overlay is-hidden" id="resultOverlay">
+          <div class="result-card">
+            <img id="resultImage" src="../../assets/fruits/watermelon.png" alt="" />
+            <h2 id="resultTitle">合成西瓜了！</h2>
+            <p id="resultMessage"></p>
+            <button class="primary-button" id="resultButton" type="button">继续挑战</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="merge-controls" role="group" aria-label="滑动方向">
+        <button type="button" data-direction="up" aria-label="向上滑动">↑</button>
+        <button type="button" data-direction="left" aria-label="向左滑动">←</button>
+        <span>滑动棋盘<br />或使用方向键</span>
+        <button type="button" data-direction="right" aria-label="向右滑动">→</button>
+        <button type="button" data-direction="down" aria-label="向下滑动">↓</button>
+      </div>
+    </main>
+    <script src="merge.js"></script>
+  </body>
+</html>

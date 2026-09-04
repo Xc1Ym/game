@@ -2,7 +2,7 @@
   "name": "fruit-link-game",
   "version": "1.0.0",
   "private": true,
-  "description": "A dependency-free fruit-themed tile matching game.",
+  "description": "A dependency-free fruit-themed browser game collection.",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test",

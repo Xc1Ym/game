@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#174936" />
+    <meta name="description" content="根据数字线索找出果园害虫的水果主题扫雷游戏。" />
+    <title>果园扫雷｜果园街机厅</title>
+    <link rel="stylesheet" href="../shared.css" />
+    <link rel="stylesheet" href="mines.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="game-header">
+        <a class="back-home" href="../../">← 街机厅</a>
+        <div class="game-brand">
+          <img src="../../assets/fruits/pomegranate.png" alt="" />
+          <div><p class="eyebrow">ORCHARD MINES</p><h1>果园扫雷</h1></div>
+        </div>
+        <button class="header-action" id="resetButton" type="button">重新开始</button>
+      </header>
+
+      <section class="game-toolbar" aria-label="扫雷设置">
+        <div class="difficulty-group" role="group" aria-label="选择难度">
+          <button class="difficulty-button is-active" type="button" data-level="easy">悠闲 8×8</button>
+          <button class="difficulty-button" type="button" data-level="normal">进阶 10×12</button>
+          <button class="difficulty-button" type="button" data-level="hard">挑战 12×16</button>
+        </div>
+        <div class="mode-group" role="group" aria-label="选择操作">
+          <button class="mode-button is-active" id="revealMode" type="button" data-mode="reveal">翻开</button>
+          <button class="mode-button" id="flagMode" type="button" data-mode="flag">插旗</button>
+        </div>
+      </section>
+
+      <section class="status-strip" aria-label="本局状态">
+        <div class="status-box"><span>剩余害虫</span><strong id="minesLeft">10</strong></div>
+        <div class="status-box"><span>用时</span><strong id="timer">00:00</strong></div>
+        <div class="status-box"><span>已翻开</span><strong id="revealedCount">0</strong></div>
+        <div class="status-box"><span>本机最佳</span><strong id="bestTime">--:--</strong></div>
+      </section>
+
+      <section class="game-panel mine-panel">
+        <div class="mine-board" id="mineBoard" role="grid" aria-label="果园扫雷棋盘"></div>
+        <div class="result-overlay is-hidden" id="resultOverlay">
+          <div class="result-card">
+            <img id="resultImage" src="../../assets/fruits/kiwi.png" alt="" />
+            <h2 id="resultTitle">果园安全了！</h2>
+            <p id="resultMessage"></p>
+            <button class="primary-button" id="playAgainButton" type="button">再玩一局</button>
+          </div>
+        </div>
+      </section>
+      <p class="game-help">电脑可左键翻开、右键插旗；手机先选择“翻开”或“插旗”，再点格子。第一次翻开一定安全。</p>
+    </main>
+    <script src="mines.js"></script>
+  </body>
+</html>

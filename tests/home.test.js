@@ -8,10 +8,10 @@ const homepage = readFileSync(join(root, "index.html"), "utf8");
 const game = readFileSync(join(root, "games/link-link/index.html"), "utf8");
 const { directionForKey, wrapIndex } = require("../home.js");
 
-test("arcade homepage exposes the playable game and planned collection", () => {
-  assert.match(homepage, /data-href="games\/link-link\/"/);
+test("arcade homepage exposes all four playable games", () => {
   ["水果连连看", "果园扫雷", "接水果", "水果合成"].forEach((name) => assert.match(homepage, new RegExp(name)));
   assert.equal((homepage.match(/role="option"/g) || []).length, 4);
+  assert.equal((homepage.match(/class="menu-state is-live"/g) || []).length, 4);
   assert.match(homepage, /id="joystick"/);
   assert.match(homepage, /id="startButton"/);
 });
@@ -38,4 +38,18 @@ test("arcade selection wraps and supports arrow or WASD controls", () => {
   assert.equal(directionForKey("W"), -1);
   assert.equal(directionForKey("ArrowDown"), 1);
   assert.equal(directionForKey("s"), 1);
+});
+
+test("every arcade route resolves to a complete game page", () => {
+  const routes = [...homepage.matchAll(/data-href="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(routes, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/"]);
+  routes.forEach((route) => {
+    const gameDirectory = join(root, route);
+    const gamePage = join(gameDirectory, "index.html");
+    assert.equal(existsSync(gamePage), true, route);
+    const html = readFileSync(gamePage, "utf8");
+    const references = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((match) => match[1]);
+    references.filter((reference) => !reference.startsWith("#") && !reference.includes(":"))
+      .forEach((reference) => assert.equal(existsSync(join(gameDirectory, reference)), true, route + reference));
+  });
 });

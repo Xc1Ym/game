@@ -19,10 +19,11 @@ const server = createServer(async (request, response) => {
     const url = new URL(request.url || "/", `http://${host}:${port}`);
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
     const relativePath = normalize(decodeURIComponent(requested)).replace(/^(\.\.(\/|\\|$))+/, "");
-    const filePath = join(root, relativePath);
-    if (!filePath.startsWith(root) || !(await stat(filePath)).isFile()) {
-      throw new Error("Not found");
-    }
+    let filePath = join(root, relativePath);
+    if (!filePath.startsWith(root)) throw new Error("Not found");
+    const requestedStat = await stat(filePath);
+    if (requestedStat.isDirectory()) filePath = join(filePath, "index.html");
+    if (!(await stat(filePath)).isFile()) throw new Error("Not found");
     const body = await readFile(filePath);
     response.writeHead(200, { "Content-Type": types[extname(filePath)] || "application/octet-stream" });
     response.end(body);
@@ -33,5 +34,5 @@ const server = createServer(async (request, response) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Fruit Link is running at http://${host}:${port}`);
+  console.log(`Orchard Arcade is running at http://${host}:${port}`);
 });
