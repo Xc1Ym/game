@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fff8eb" />
+    <title>果园连连看｜果园游戏屋</title>
+    <link rel="stylesheet" href="../../styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <a class="back-home" href="../../" aria-label="返回果园游戏屋首页">← 返回游戏屋</a>
+      <header class="hero">
+        <div class="brand-mark" aria-hidden="true"><img src="../../assets/fruits/orange.png" alt="" /></div>
+        <div>
+          <p class="eyebrow">FRUIT LINK</p>
+          <h1>果园连连看</h1>
+          <p class="subtitle">连接相同水果，收获今天的好心情</p>
+        </div>
+        <button class="sound-button" id="soundButton" type="button" aria-label="关闭音效" title="开关音效">♪</button>
+      </header>
+
+      <section class="control-bar" aria-label="游戏设置">
+        <div class="difficulty-tabs" role="group" aria-label="选择难度">
+          <button class="difficulty active" type="button" data-level="easy">悠闲</button>
+          <button class="difficulty" type="button" data-level="normal">进阶</button>
+          <button class="difficulty" type="button" data-level="hard">挑战</button>
+        </div>
+        <div class="control-actions">
+          <label class="player-field">
+            <span>玩家</span>
+            <input id="playerName" type="text" value="玩家1" maxlength="12" autocomplete="nickname" aria-label="当前玩家名称" />
+          </label>
+          <button class="new-game" id="newGameButton" type="button">
+            <span aria-hidden="true">↻</span> 新游戏
+          </button>
+        </div>
+      </section>
+
+      <section class="game-card">
+        <div class="status-row" aria-label="当前游戏状态">
+          <div class="status-item score-box">
+            <span class="status-label">积分 · <span id="scoreDifficulty">悠闲</span></span>
+            <strong id="score">0</strong>
+          </div>
+          <div class="time-box">
+            <div class="time-copy">
+              <span class="status-label">剩余时间</span>
+              <strong id="timeText">03:00</strong>
+            </div>
+            <div class="timer-track" aria-hidden="true"><span id="timerFill"></span></div>
+          </div>
+          <div class="status-item">
+            <span class="status-label">剩余</span>
+            <strong><span id="remaining">36</span><small> 枚</small></strong>
+          </div>
+        </div>
+
+        <div class="board-wrap" id="boardWrap">
+          <div class="board" id="board" role="grid" aria-label="水果棋盘"></div>
+          <svg class="path-layer" id="pathLayer" aria-hidden="true"></svg>
+          <div class="combo-badge" id="comboBadge" aria-live="polite"></div>
+        </div>
+
+        <div class="action-row">
+          <button class="action-button hint" id="hintButton" type="button">
+            <span class="action-icon" aria-hidden="true">💡</span>
+            <span>提示 <b id="hintCount">6</b></span>
+          </button>
+          <button class="action-button shuffle" id="shuffleButton" type="button">
+            <span class="action-icon" aria-hidden="true">⤨</span>
+            <span>洗牌 <b id="shuffleCount">3</b></span>
+          </button>
+          <button class="action-button leaderboard" id="leaderboardButton" type="button">
+            <span class="action-icon" aria-hidden="true">★</span>
+            <span>本机排行</span>
+          </button>
+        </div>
+      </section>
+
+      <p class="game-tip"><span aria-hidden="true">✦</span> 相同水果间的连线转弯不超过两次即可消除</p>
+    </main>
+
+    <div class="modal-backdrop hidden" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div class="result-card">
+        <div class="result-fruit" id="resultFruit" aria-hidden="true">🏆</div>
+        <p class="eyebrow" id="resultEyebrow">丰收时刻</p>
+        <h2 id="resultTitle">太棒了！</h2>
+        <p id="resultMessage">你成功清空了果园。</p>
+        <div class="result-score"><span>本局积分 · <span id="resultDifficulty">悠闲</span></span><strong id="finalScore">0</strong></div>
+        <button class="new-game result-button" id="playAgainButton" type="button">再玩一局</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop hidden" id="leaderboardModal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+      <div class="ranking-card">
+        <button class="modal-close" id="closeLeaderboardButton" type="button" aria-label="关闭排行榜">×</button>
+        <p class="eyebrow">LOCAL RECORDS</p>
+        <h2 id="leaderboardTitle">本机积分排行</h2>
+        <p class="ranking-note">保留积分最高的 10 局，同分时用时短的优先；同一玩家可多次上榜，数据仅存于当前浏览器</p>
+        <div class="ranking-tabs" role="group" aria-label="排行榜难度">
+          <button class="ranking-tab active" type="button" data-ranking-level="easy">悠闲</button>
+          <button class="ranking-tab" type="button" data-ranking-level="normal">进阶</button>
+          <button class="ranking-tab" type="button" data-ranking-level="hard">挑战</button>
+        </div>
+        <div class="ranking-header" aria-hidden="true">
+          <span>名次</span><span>玩家</span><span id="rankingScoreLabel">积分·悠闲</span><span>用时</span>
+        </div>
+        <div class="ranking-list" id="rankingList" role="list"></div>
+        <button class="new-game ranking-close-button" id="rankingDoneButton" type="button">关闭</button>
+      </div>
+    </div>
+
+    <script src="../../src/logic.js"></script>
+    <script src="../../src/app.js"></script>
+  </body>
+</html>

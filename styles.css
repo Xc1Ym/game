@@ -40,6 +40,25 @@ button {
   touch-action: manipulation;
 }
 
+.back-home {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  margin: -8px 0 12px;
+  padding: 7px 11px;
+  color: #816f5c;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #eee1ce;
+  border-radius: 11px;
+  touch-action: manipulation;
+}
+
+.back-home:hover { color: var(--orange-deep); border-color: #e9c896; }
+.back-home:focus-visible { outline: 3px solid rgba(232, 111, 45, 0.3); outline-offset: 2px; }
+
 .app-shell {
   width: min(100% - 32px, 880px);
   margin: 0 auto;

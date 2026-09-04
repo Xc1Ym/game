@@ -273,7 +273,7 @@
         tile.disabled = fruit == null;
         if (fruit != null) {
           const image = document.createElement("img");
-          image.src = `assets/fruits/${fruit}.png`;
+          image.src = `../../assets/fruits/${fruit}.png`;
           image.alt = "";
           image.draggable = false;
           tile.appendChild(image);

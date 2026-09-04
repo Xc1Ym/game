@@ -58,7 +58,7 @@ class Element {
 }
 
 function createApp(board, overrides = {}) {
-  const html = readFileSync(join(__dirname, "../../index.html"), "utf8");
+  const html = readFileSync(join(__dirname, "../../games/link-link/index.html"), "utf8");
   const nodes = Object.fromEntries([...html.matchAll(/id="([^"]+)"/g)].map(([, id]) => [id, new Element()]));
   nodes.resultModal.classList.add("hidden");
   nodes.leaderboardModal.classList.add("hidden");
