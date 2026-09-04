@@ -11,6 +11,7 @@ const { directionForKey, wrapIndex } = require("../home.js");
 test("arcade homepage exposes all four playable games", () => {
   ["水果连连看", "果园扫雷", "接水果", "水果合成"].forEach((name) => assert.match(homepage, new RegExp(name)));
   assert.equal((homepage.match(/role="option"/g) || []).length, 4);
+  assert.equal((homepage.match(/<a\s+class="arcade-game/g) || []).length, 4);
   assert.equal((homepage.match(/class="menu-state is-live"/g) || []).length, 4);
   assert.match(homepage, /id="joystick"/);
   assert.match(homepage, /id="startButton"/);
@@ -52,4 +53,9 @@ test("every arcade route resolves to a complete game page", () => {
     references.filter((reference) => !reference.startsWith("#") && !reference.includes(":"))
       .forEach((reference) => assert.equal(existsSync(join(gameDirectory, reference)), true, route + reference));
   });
+});
+
+test("every PLAY item is a native one-click link", () => {
+  const links = [...homepage.matchAll(/href="(games\/[^"]+\/)"[\s\S]*?data-href="\1"/g)].map((match) => match[1]);
+  assert.deepEqual(links, ["games/link-link/", "games/mines/", "games/catcher/", "games/merge/"]);
 });

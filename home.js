@@ -78,8 +78,7 @@
 
   games.forEach((game, gameIndex) => {
     game.addEventListener("click", () => {
-      if (gameIndex === selectedIndex) launchSelected();
-      else selectGame(gameIndex);
+      selectGame(gameIndex);
     });
   });
 

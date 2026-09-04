@@ -172,7 +172,9 @@ button { font: inherit; }
   gap: 10px;
   padding: 7px 12px;
   color: #9bc7ae;
+  font: inherit;
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
   background: rgba(10, 39, 30, 0.7);
   border: 2px solid #24483a;
