@@ -3,112 +3,144 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#214f3d" />
-    <meta name="description" content="轻松好玩的水果主题网页小游戏合集。" />
-    <title>果园游戏屋</title>
+    <meta name="theme-color" content="#101820" />
+    <meta name="description" content="用摇杆选择游戏的水果主题网页街机厅。" />
+    <title>果园街机厅</title>
     <link rel="stylesheet" href="home.css" />
   </head>
   <body>
-    <header class="site-header">
-      <a class="home-brand" href="./" aria-label="果园游戏屋首页">
-        <span class="brand-fruit" aria-hidden="true"><img src="assets/fruits/orange.png" alt="" /></span>
-        <span>果园游戏屋</span>
-      </a>
-      <span class="header-note">随时来玩一局</span>
-    </header>
-
-    <main>
-      <section class="welcome" aria-labelledby="welcome-title">
-        <div class="welcome-copy">
-          <p class="eyebrow">ORCHARD ARCADE</p>
-          <h1 id="welcome-title">今天想玩点什么？</h1>
-          <p>从一局轻松的水果小游戏开始。无需安装，手机和电脑都能直接玩。</p>
-        </div>
-        <div class="welcome-fruits" aria-hidden="true">
-          <img class="welcome-fruit welcome-fruit-main" src="assets/fruits/dragonfruit.png" alt="" />
-          <img class="welcome-fruit welcome-fruit-left" src="assets/fruits/lemon.png" alt="" />
-          <img class="welcome-fruit welcome-fruit-right" src="assets/fruits/blueberries.png" alt="" />
-        </div>
-      </section>
-
-      <section class="games-section" aria-labelledby="games-title">
-        <div class="section-heading">
+    <main class="arcade-room">
+      <section class="arcade-cabinet" aria-labelledby="arcade-title">
+        <header class="marquee">
+          <span class="marquee-star" aria-hidden="true">✦</span>
           <div>
-            <p class="eyebrow">GAME SHELF</p>
-            <h2 id="games-title">选择游戏</h2>
+            <p>ORCHARD ARCADE</p>
+            <h1 id="arcade-title">果园街机厅</h1>
           </div>
-          <p><strong>1</strong> 款已开放 · <strong>3</strong> 款筹备中</p>
-        </div>
+          <span class="marquee-star" aria-hidden="true">✦</span>
+        </header>
 
-        <div class="game-grid">
-          <a class="game-card game-card-live" href="games/link-link/">
-            <div class="game-art link-art" aria-hidden="true">
-              <span><img src="assets/fruits/apple.png" alt="" /></span>
-              <span><img src="assets/fruits/orange.png" alt="" /></span>
-              <span><img src="assets/fruits/apple.png" alt="" /></span>
-              <span><img src="assets/fruits/orange.png" alt="" /></span>
-            </div>
-            <div class="game-copy">
-              <span class="status status-live">可以玩</span>
-              <h3>水果连连看</h3>
-              <p>寻找相同水果，用不超过两次转弯的路线连接消除。</p>
-              <div class="game-meta"><span>益智</span><span>1–6 分钟</span><span>三档难度</span></div>
-              <strong class="game-action">进入游戏 <span aria-hidden="true">→</span></strong>
-            </div>
-          </a>
+        <div class="cabinet-body">
+          <div class="screen-bezel">
+            <div class="screen" id="arcadeScreen">
+              <div class="screen-topline">
+                <span>SELECT GAME</span>
+                <span class="screen-ready"><i aria-hidden="true"></i> READY</span>
+              </div>
 
-          <article class="game-card game-card-soon" aria-labelledby="mines-title">
-            <div class="game-art mines-art" aria-hidden="true">
-              <span><img src="assets/fruits/kiwi.png" alt="" /></span>
-              <span class="danger-fruit"><img src="assets/fruits/pomegranate.png" alt="" /></span>
-              <span><img src="assets/fruits/lime.png" alt="" /></span>
-              <span><img src="assets/fruits/kiwi.png" alt="" /></span>
-              <span><img src="assets/fruits/lime.png" alt="" /></span>
-              <span><img src="assets/fruits/kiwi.png" alt="" /></span>
-            </div>
-            <div class="game-copy">
-              <span class="status status-next">下一批</span>
-              <h3 id="mines-title">果园扫雷</h3>
-              <p>根据数字线索找出藏在果园里的害虫，保护所有好果子。</p>
-              <div class="game-meta"><span>逻辑</span><span>关卡制</span><span>可插旗</span></div>
-              <span class="game-wait">正在筹备</span>
-            </div>
-          </article>
+              <div class="screen-content">
+                <div class="game-menu" role="listbox" aria-label="选择游戏" aria-activedescendant="game-link-link">
+                  <button
+                    class="arcade-game is-selected"
+                    id="game-link-link"
+                    type="button"
+                    role="option"
+                    aria-selected="true"
+                    data-href="games/link-link/"
+                    data-title="水果连连看"
+                    data-description="连接相同水果，清空整片果园。"
+                    data-meta="益智 · 三档难度"
+                    data-status="可以玩"
+                  >
+                    <span class="game-number">01</span>
+                    <img src="assets/fruits/apple.png" alt="" />
+                    <span class="menu-game-name">水果连连看<small>FRUIT LINK</small></span>
+                    <span class="menu-state is-live">PLAY</span>
+                  </button>
 
-          <article class="game-card game-card-soon" aria-labelledby="catch-title">
-            <div class="game-art catch-art" aria-hidden="true">
-              <img class="fall fall-one" src="assets/fruits/strawberry.png" alt="" />
-              <img class="fall fall-two" src="assets/fruits/pear.png" alt="" />
-              <img class="fall fall-three" src="assets/fruits/grapes.png" alt="" />
-              <div class="catch-target">接住水果</div>
-            </div>
-            <div class="game-copy">
-              <span class="status status-next">下一批</span>
-              <h3 id="catch-title">接水果</h3>
-              <p>移动果篮接住新鲜水果，避开坏果，连续接取获得加成。</p>
-              <div class="game-meta"><span>反应</span><span>单局挑战</span><span>触控操作</span></div>
-              <span class="game-wait">正在筹备</span>
-            </div>
-          </article>
+                  <button
+                    class="arcade-game"
+                    id="game-mines"
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    data-title="果园扫雷"
+                    data-description="根据数字线索找出藏起来的害虫。"
+                    data-meta="逻辑 · 关卡制"
+                    data-status="下一批"
+                  >
+                    <span class="game-number">02</span>
+                    <img src="assets/fruits/pomegranate.png" alt="" />
+                    <span class="menu-game-name">果园扫雷<small>ORCHARD MINES</small></span>
+                    <span class="menu-state">SOON</span>
+                  </button>
 
-          <article class="game-card game-card-soon" aria-labelledby="merge-title">
-            <div class="game-art merge-art" aria-hidden="true">
-              <span class="merge-small"><img src="assets/fruits/cherries.png" alt="" /></span>
-              <span class="merge-medium"><img src="assets/fruits/peach.png" alt="" /></span>
-              <span class="merge-large"><img src="assets/fruits/watermelon.png" alt="" /></span>
+                  <button
+                    class="arcade-game"
+                    id="game-catcher"
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    data-title="接水果"
+                    data-description="移动果篮，接住水果并避开坏果。"
+                    data-meta="反应 · 触控操作"
+                    data-status="下一批"
+                  >
+                    <span class="game-number">03</span>
+                    <img src="assets/fruits/strawberry.png" alt="" />
+                    <span class="menu-game-name">接水果<small>FRUIT CATCHER</small></span>
+                    <span class="menu-state">SOON</span>
+                  </button>
+
+                  <button
+                    class="arcade-game"
+                    id="game-merge"
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    data-title="水果合成"
+                    data-description="滑动合成相同水果，挑战更高积分。"
+                    data-meta="合成 · 无尽模式"
+                    data-status="规划中"
+                  >
+                    <span class="game-number">04</span>
+                    <img src="assets/fruits/watermelon.png" alt="" />
+                    <span class="menu-game-name">水果合成<small>FRUIT 2048</small></span>
+                    <span class="menu-state">PLAN</span>
+                  </button>
+                </div>
+
+                <aside class="game-preview" aria-live="polite">
+                  <span class="preview-status" id="previewStatus">可以玩</span>
+                  <div class="preview-fruit"><img id="previewFruit" src="assets/fruits/apple.png" alt="" /></div>
+                  <h2 id="previewTitle">水果连连看</h2>
+                  <p id="previewDescription">连接相同水果，清空整片果园。</p>
+                  <span class="preview-meta" id="previewMeta">益智 · 三档难度</span>
+                </aside>
+              </div>
+
+              <p class="screen-message" id="screenMessage" aria-live="polite">上下拨动摇杆选择游戏</p>
             </div>
-            <div class="game-copy">
-              <span class="status status-plan">规划中</span>
-              <h3 id="merge-title">水果合成</h3>
-              <p>滑动果盘，让相同水果逐级合成，挑战更大的水果与更高积分。</p>
-              <div class="game-meta"><span>合成</span><span>无尽模式</span><span>滑动操作</span></div>
-              <span class="game-wait">等待开工</span>
+          </div>
+
+          <div class="control-deck">
+            <p class="keyboard-hint">拖动苹果摇杆，或使用键盘 ↑ ↓ / W S 选择游戏</p>
+
+            <div class="joystick-panel" role="group" aria-label="游戏选择摇杆">
+              <p class="deck-label">SELECT</p>
+              <button class="nudge-button" type="button" data-step="-1" aria-label="选择上一个游戏">▲</button>
+              <button class="joystick" id="joystick" type="button" aria-label="上下拨动摇杆选择游戏" aria-describedby="screenMessage">
+                <img src="assets/fruits/apple.png" alt="" aria-hidden="true" />
+                <span class="joystick-shaft" aria-hidden="true"></span>
+              </button>
+              <button class="nudge-button" type="button" data-step="1" aria-label="选择下一个游戏">▼</button>
             </div>
-          </article>
+
+            <div class="start-panel">
+              <p class="deck-label">START</p>
+              <button class="start-button" id="startButton" type="button" aria-label="进入当前选择的游戏">A</button>
+            </div>
+          </div>
+
+          <footer class="cabinet-footer">
+            <span><i aria-hidden="true"></i> 1 GAME READY</span>
+            <span>成绩保存在当前浏览器</span>
+            <span class="coin-slot" aria-hidden="true"></span>
+          </footer>
         </div>
       </section>
     </main>
 
-    <footer>果园游戏屋 · 成绩保存在当前浏览器</footer>
+    <script src="home.js"></script>
   </body>
 </html>
