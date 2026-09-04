@@ -1,12 +1,13 @@
-.catcher-panel { background: #dff1df; }
+.catcher-panel {
+  --catcher-background: #dff1df;
+  background: var(--catcher-background);
+}
 
 .catch-field {
   position: relative;
   height: clamp(480px, 68vh, 680px);
   overflow: hidden;
-  background:
-    linear-gradient(transparent 75%, rgba(92, 139, 65, 0.16)),
-    linear-gradient(#cdeee8 0 62%, #e9efc9 62% 100%);
+  background: var(--catcher-background);
   touch-action: none;
   user-select: none;
 }
@@ -56,7 +57,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 7px 5px rgba(45, 78, 54, 0.22));
+  filter: none;
   pointer-events: none;
 }
 .falling-item.is-bad {
